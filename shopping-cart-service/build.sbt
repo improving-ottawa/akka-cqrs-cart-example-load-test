@@ -38,6 +38,14 @@ dockerUsername := sys.props.get("docker.username")
 dockerRepository := sys.props.get("docker.registry")
 ThisBuild / dynverSeparator := "-"
 
+// cassandra persistence
+libraryDependencies ++= Seq(
+  "com.typesafe.akka" %% "akka-persistence-cassandra" % "1.1.0",
+  "com.typesafe.akka" %% "akka-persistence" % AkkaVersion,
+  "com.typesafe.akka" %% "akka-persistence-query" % AkkaVersion,
+  "com.typesafe.akka" %% "akka-cluster-tools" % AkkaVersion
+)
+
 libraryDependencies ++= Seq(
   // 1. Basic dependencies for a clustered application
   "com.typesafe.akka" %% "akka-stream" % AkkaVersion,
