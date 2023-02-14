@@ -1,0 +1,13 @@
+target/
+
+.settings
+.project
+.classpath
+.scalafmt-common.conf
+
+.idea
+*.iml
+
+.metals
+.bloop
+
