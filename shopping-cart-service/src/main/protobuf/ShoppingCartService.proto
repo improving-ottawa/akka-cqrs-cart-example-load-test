@@ -1,27 +1,32 @@
 syntax = "proto3";
 
+import "scalapb/scalapb.proto";
+
 option java_multiple_files = true;
 option java_package = "shopping.cart.proto";
 
 package shoppingcart;
 
+option (scalapb.options) = {
+    single_file: true
+    preamble: "sealed trait ExchangeRateMessage extends scalapb.GeneratedMessage"
+    preamble: "sealed trait ExchangeRateTypeMessage extends scalapb.GeneratedMessage"
+    lenses: true
+    retain_source_code_info: true
+};
 // gRPC definition for ShoppingCartService
 
 
 
 service ShoppingCartService {
 
-
     rpc AddItem (AddItemRequest) returns (Cart) {}
     rpc UpdateItem (UpdateItemRequest) returns (Cart) {}
-    
+
     rpc Checkout (CheckoutRequest) returns (Cart) {}
     rpc GetCart (GetCartRequest) returns (Cart) {}
-    
 
-    
     rpc GetItemPopularity(GetItemPopularityRequest) returns (GetItemPopularityResponse) {}
-    
 }
 
 
