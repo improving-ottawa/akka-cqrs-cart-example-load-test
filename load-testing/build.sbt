@@ -13,9 +13,18 @@ lazy val loadTesting = project
   .settings(
     scalaVersion := "2.13.10",
     libraryDependencies ++= Seq(
-    "io.gatling.highcharts" % "gatling-charts-highcharts" % gatling % Test,
-    "io.gatling" % "gatling-test-framework" % gatling % Test,
-    "com.github.phisgr" % "gatling-grpc" % "0.15.1" % Test),
+      "com.fasterxml.jackson.core" % "jackson-databind" % "2.14.1",
+      "com.fasterxml.jackson.core" % "jackson-core" % "2.14.1",
+      "com.fasterxml.jackson.core" % "jackson-annotations" % "2.14.1",
+      "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.14.1",
+      "com.fasterxml.jackson.module" % "jackson-module-parameter-names" % "2.14.1",
+      "com.fasterxml.jackson.dataformat" % "jackson-dataformat-cbor" % "2.14.1",
+      "com.fasterxml.jackson.datatype" % "jackson-datatype-jdk8" % "2.14.1",
+      "com.fasterxml.jackson.datatype" % "jackson-datatype-jsr310" % "2.14.1",
+      "io.gatling.highcharts" % "gatling-charts-highcharts" % gatling % Test,
+      "io.gatling" % "gatling-test-framework" % gatling % Test,
+      "com.github.phisgr" % "gatling-grpc" % "0.15.1" % Test
+    ),
     name := "load-testing",
-    libraryDependencies ++= integrationTestDependencies
+    libraryDependencies ++= integrationTestDependencies,
   )

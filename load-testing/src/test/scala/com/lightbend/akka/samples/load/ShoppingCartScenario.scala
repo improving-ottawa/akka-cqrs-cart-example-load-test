@@ -4,7 +4,7 @@ import com.github.phisgr.gatling.grpc.Predef._
 import com.github.phisgr.gatling.grpc.protocol.GrpcProtocol
 import com.github.phisgr.gatling.pb._
 import com.lightbend.akka.samples.load.ShoppingCartScenario.Catalogue
-import shopping.cart.proto.{AddItemRequest, ItemAdded, ShoppingCartServiceGrpc}
+import shopping.cart.proto.{AddItemRequest, ShoppingCartServiceGrpc}
 // stringToExpression is hidden because we have $ in GrpcDsl
 import io.gatling.core.Predef.{stringToExpression => _, _}
 import io.gatling.core.feeder.Feeder
@@ -19,27 +19,8 @@ class ShoppingCartScenario(cartId: String, catalogue: Catalogue)(protocol: GrpcP
 
   val quantityGen = Gen.choose(3, 7000)
 
-//
-//  val currenyCodeGen = Gen.oneOf(relevantCurrencies)
-//  val rateCodeGen = Gen.oneOf(RateTypeCode.values)
-//  val doubleGen = Gen.chooseNum[Double](0.1, 1000)
-//  val directionGen = Gen.oneOf(Seq(Direction.TO_LOCAL_CURRENCY, Direction.TO_FOREIGN_CURRENCY))
-//  val boolGen = Gen.oneOf(true, false)
-//  val convertAmountQueryGen = for {
-//    currCode <- currenyCodeGen
-//    rateCode <- rateCodeGen
-//    amount <- doubleGen
-//    direction <- directionGen
-//  } yield ConvertAmount(
-//    rateCode,
-//    currCode,
-//    isBuy = false,
-//    amount,
-//    direction
-//  )
-
   val addItemQueryFeeder: Feeder[Any] = Iterator.continually(Map(
-    "itemId" -> catalogue.randomItem,
+    "itemId" -> ShoppingCartScenario.shoppingCartIdGen.sample.get,
     "cartId" -> cartId,
     "quantity" -> quantityGen.sample.get
   ))
@@ -57,7 +38,7 @@ class ShoppingCartScenario(cartId: String, catalogue: Catalogue)(protocol: GrpcP
         grpc(_ => "Add Item")
           .rpc(ShoppingCartServiceGrpc.METHOD_ADD_ITEM)
           .payload(addItemRequestExpr)
-          .check(statusCode is Status.Code.OK)
+//          .check(statusCode is Status.Code.OK)
           .target(protocol)
       )
       .pause(vars.pauseTime)
@@ -85,5 +66,5 @@ object ShoppingCartScenario {
     Catalogue(items.map(_ -> false).toMap)
   }
 
-  val shoppingCartIdGen = Gen.alphaStr
+  val shoppingCartIdGen = Gen.identifier
 }

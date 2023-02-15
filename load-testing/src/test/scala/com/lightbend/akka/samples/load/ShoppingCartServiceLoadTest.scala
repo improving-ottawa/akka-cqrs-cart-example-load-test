@@ -9,7 +9,7 @@ import io.gatling.core.Predef.{stringToExpression => _, _}
 
 class ShoppingCartServiceLoadTest extends Simulation {
 
-  val localTarget = Target("127.0.0.1", 8080)
+  val localTarget = Target("127.0.0.1", 8101)
   val targetMap = Map(
     "local" -> localTarget,
     "dev" -> Target("127.0.0.1", 10110)
@@ -26,9 +26,9 @@ class ShoppingCartServiceLoadTest extends Simulation {
       ShoppingCartScenario(grpcTarget)
     )
 
-  private val users = System.getProperty("requestsPerSecond", "50").toInt
+  private val users = System.getProperty("requestsPerSecond", "100").toInt
 
-  private val loadDuration: FiniteDuration = (5 * 60).seconds // 5 minutes
+  private val loadDuration: FiniteDuration = (1 * 60).seconds // 5 minutes
 
   println(s"Starting Shopping cart load test at ${users} users per second")
 

@@ -25,11 +25,11 @@ before_script:
 exchange_rate_load_test:
   stage: load_test
   script:
-    - mkdir -p ~/.kube; echo "$CI_K8S_CONFIG_DEV" > ~/.kube/config
-    - kubectl port-forward services/exchange-rate-service 10110:10110 -n application &>/dev/null &
+#    - mkdir -p ~/.kube; echo "$CI_K8S_CONFIG_DEV" > ~/.kube/config
+#    - kubectl port-forward services/service-under-test
     - PID="$!" # capture the PID of the port-forward process
     - export JAVA_OPTS="$JAVA_OPTS -DtargetEnvironment=dev -DrequestsPerSecond=${REQUESTS_PER_SECOND}"
-    - sbt $SBT_OPTS clean gatling:test
+    - sbt clean gatling:test
     - kill "$PID"
   artifacts:
     when: always
