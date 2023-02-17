@@ -10,35 +10,35 @@ import shopping.cart.repository.{ ItemPopularityRepository, ScalikeJdbcSession }
 class ItemPopularityProjectionHandler(
     tag: String,
     system: ActorSystem[_],
-    repo: ItemPopularityRepository)
+    repoFactory: ScalikeJdbcSession => ItemPopularityRepository)
     extends JdbcHandler[
       EventEnvelope[ShoppingCart.Event],
-      ScalikeJdbcSession]() { 
+      ScalikeJdbcSession]() {
 
   private val log = LoggerFactory.getLogger(getClass)
 
   override def process(
       session: ScalikeJdbcSession,
-      envelope: EventEnvelope[ShoppingCart.Event]): Unit = { 
-    envelope.event match { 
+      envelope: EventEnvelope[ShoppingCart.Event]): Unit = {
+    envelope.event match {
       case ShoppingCart.ItemAdded(_, itemId, quantity) =>
-        repo.update(session, itemId, quantity)
+        repoFactory(session).update(itemId, quantity)
         logItemCount(session, itemId)
 
-      
+
       case ShoppingCart.ItemQuantityAdjusted(
             _,
             itemId,
             newQuantity,
             oldQuantity) =>
-        repo.update(session, itemId, newQuantity - oldQuantity)
+        repoFactory(session).update(itemId, newQuantity - oldQuantity)
         logItemCount(session, itemId)
 
       case ShoppingCart.ItemRemoved(_, itemId, oldQuantity) =>
-        repo.update(session, itemId, 0 - oldQuantity)
+        repoFactory(session).update(itemId, 0 - oldQuantity)
         logItemCount(session, itemId)
 
-      
+
 
       case _: ShoppingCart.CheckedOut =>
     }
@@ -51,7 +51,7 @@ class ItemPopularityProjectionHandler(
       "ItemPopularityProjectionHandler({}) item popularity for '{}': [{}]",
       tag,
       itemId,
-      repo.getItem(session, itemId).getOrElse(0))
+      repoFactory(session).getItem(itemId).getOrElse(0))
   }
 
 }

@@ -3,17 +3,22 @@ package shopping.cart.repository
 import scalikejdbc._
 
 
-trait ItemPopularityRepository {
+trait ItemPopularityInfraAgnosticRepository {
   def update(session: ScalikeJdbcSession, itemId: String, delta: Int): Unit
   def getItem(session: ScalikeJdbcSession, itemId: String): Option[Long]
 }
 
+trait ItemPopularityRepository {
+  def update(itemId: String, delta: Int): Unit
+
+  def getItem(itemId: String): Option[Long]
+}
 
 
-class ItemPopularityRepositoryImpl() extends ItemPopularityRepository {
+
+class ItemPopularityRepositoryImpl(session: ScalikeJdbcSession) extends ItemPopularityRepository {
 
   override def update(
-      session: ScalikeJdbcSession,
       itemId: String,
       delta: Int): Unit = {
     session.db.withinTx { implicit dbSession =>
@@ -29,7 +34,6 @@ class ItemPopularityRepositoryImpl() extends ItemPopularityRepository {
   }
 
   override def getItem(
-      session: ScalikeJdbcSession,
       itemId: String): Option[Long] = {
     if (session.db.isTxAlreadyStarted) {
       session.db.withinTx { implicit dbSession =>
