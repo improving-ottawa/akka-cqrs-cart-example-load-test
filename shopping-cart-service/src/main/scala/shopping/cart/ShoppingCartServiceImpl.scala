@@ -51,7 +51,7 @@ class ShoppingCartServiceImpl(
   }
 
   override def updateItem(in: proto.UpdateItemRequest): Future[proto.Cart] = {
-    logger.info("updateItem {} to cart {}", in.itemId, in.cartId)
+    logger.info("updateItem {} ({}) to cart {}", in.itemId, in.quantity, in.cartId)
     val entityRef = sharding.entityRefFor(ShoppingCart.EntityKey, in.cartId)
 
     def command(replyTo: ActorRef[StatusReply[ShoppingCart.Summary]]) =

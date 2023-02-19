@@ -7,10 +7,10 @@
 
     # creates the tables needed for Akka Persistence
     # as well as the offset store table for Akka Projection
-    docker exec -i shopping-cart-service_postgres-db_1 psql -U shopping-cart -t < ddl-scripts/create_tables.sql
+    docker exec -i shopping-cart-service-postgres-db-1 psql -U shopping-cart -t < ddl-scripts/create_tables.sql
     
     # creates the user defined projection table.
-    docker exec -i shopping-cart-service_postgres-db_1 psql -U shopping-cart -t < ddl-scripts/create_user_tables.sql
+    docker exec -i shopping-cart-service-postgres-db-1 psql -U shopping-cart -t < ddl-scripts/create_user_tables.sql
     ```
 
    OR, for Cassandra as a journal:
@@ -19,11 +19,11 @@
 
     
    # create keyspace
-    docker exec -i shopping-cart-service_cassandra-db_1 psql -U shopping-cart -t < ddl-scripts/create_keyspaces.sql
+    docker exec -i shopping-cart-service-cassandra-db-1 cqlsh -t < ddl-scripts/create_keyspace.cql
     
     # creates the tables needed for Akka Persistence
     # as well as the offset store table for Akka Projection
-    docker exec -i shopping-cart-service_cassandra-db_1 psql -U shopping-cart -t < ddl-scripts/create_es_tables.sql
+    docker exec -i shopping-cart-service-cassandra-db-1 cqlsh -t < ddl-scripts/create_es_tables.cql
     ```
 
 2. Start a first node:
