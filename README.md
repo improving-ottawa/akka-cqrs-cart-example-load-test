@@ -19,7 +19,7 @@ Currently the scenario only involves the shopping-cart-service (taken from Akka'
 Navigate to shipping-cart-service, and start necessary infrastructure (Kafka - for now, Postgres - projections, Cassandra - journal/snapshots):
 
 ```
-$> shopping-cart-service/docker-compose up
+$> shopping-cart-service/docker-compose up -d
 ```
 
 If this is the first time starting the application, you must also bootstrap the journal.
