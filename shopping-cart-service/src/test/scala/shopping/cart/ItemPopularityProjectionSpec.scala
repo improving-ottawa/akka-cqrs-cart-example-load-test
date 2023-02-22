@@ -1,19 +1,18 @@
 package shopping.cart
 
-import java.time.Instant
-import scala.concurrent.{ ExecutionContext, Future }
 import akka.Done
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.persistence.query.Offset
 import akka.projection.ProjectionId
 import akka.projection.eventsourced.EventEnvelope
 import akka.projection.scaladsl.Handler
-import akka.projection.testkit.scaladsl.TestProjection
-import akka.projection.testkit.scaladsl.TestSourceProvider
-import akka.projection.testkit.scaladsl.ProjectionTestKit
+import akka.projection.testkit.scaladsl.{ProjectionTestKit, TestProjection, TestSourceProvider}
 import akka.stream.scaladsl.Source
 import org.scalatest.wordspec.AnyWordSpecLike
-import shopping.cart.repository.{ ItemPopularityRepository, ScalikeJdbcSession }
+import shopping.cart.repository.ItemPopularityRepository
+
+import java.time.Instant
+import scala.concurrent.{ExecutionContext, Future}
 
 object ItemPopularityProjectionSpec {
   // stub out the db layer and simulate recording item count updates
@@ -21,16 +20,15 @@ object ItemPopularityProjectionSpec {
     var counts: Map[String, Long] = Map.empty
 
     override def update(
-        session: ScalikeJdbcSession,
         itemId: String,
-        delta: Int): Unit = {
+        delta: Int): Future[Unit] = {
       counts = counts + (itemId -> (counts.getOrElse(itemId, 0L) + delta))
+      Future.successful(())
     }
 
     override def getItem(
-        session: ScalikeJdbcSession,
-        itemId: String): Option[Long] =
-      counts.get(itemId)
+        itemId: String): Future[Option[Long]] =
+      Future.successful(counts.get(itemId))
   }
 }
 
@@ -52,7 +50,7 @@ class ItemPopularityProjectionSpec
       event,
       timestamp)
 
-  private def toAsyncHandler(itemHandler: ItemPopularityProjectionHandler)(
+  private def toAsyncHandler(itemHandler: JdbcItemPopularityProjectionHandler)(
       implicit
       ec: ExecutionContext): Handler[EventEnvelope[ShoppingCart.Event]] =
     eventEnvelope =>
@@ -101,10 +99,9 @@ class ItemPopularityProjectionSpec
           sourceProvider,
           () =>
             toAsyncHandler(
-              new ItemPopularityProjectionHandler(
+              new JdbcItemPopularityProjectionHandler(
                 "carts-0",
-                system,
-                repository))(system.executionContext))
+                _ => repository))(system.executionContext))
 
       projectionTestKit.run(projection) {
         repository.counts shouldBe Map(

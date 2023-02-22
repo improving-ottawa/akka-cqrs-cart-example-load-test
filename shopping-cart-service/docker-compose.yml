@@ -14,14 +14,14 @@ services:
       - 9042:9042
 
   # this second PostgresSQL is used when running test
-#  postgres-db-test:
-#    image: postgres:latest
-#    ports:
-#      - 5433:5432
-#    environment:
-#      POSTGRES_DB: shopping-cart
-#      POSTGRES_USER: shopping-cart
-#      POSTGRES_PASSWORD: shopping-cart
+  postgres-db-test:
+    image: postgres:latest
+    ports:
+      - 5433:5432
+    environment:
+      POSTGRES_DB: shopping-cart
+      POSTGRES_USER: shopping-cart
+      POSTGRES_PASSWORD: shopping-cart
 
 # See dockerhub for different versions of kafka and zookeeper
 # https://hub.docker.com/r/wurstmeister/kafka/

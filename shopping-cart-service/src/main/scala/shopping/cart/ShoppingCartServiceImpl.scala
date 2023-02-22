@@ -1,28 +1,24 @@
 package shopping.cart
 
-import java.util.concurrent.TimeoutException
-import scala.concurrent.{ ExecutionContext, Future }
-import akka.actor.typed.{ ActorSystem, DispatcherSelector }
+import akka.actor.typed.{ActorRef, ActorSystem}
 import akka.cluster.sharding.typed.scaladsl.ClusterSharding
 import akka.grpc.GrpcServiceException
+import akka.pattern.StatusReply
 import akka.util.Timeout
 import io.grpc.Status
 import org.slf4j.LoggerFactory
-import shopping.cart.repository.{ ItemPopularityRepository, ScalikeJdbcSession }
+import shopping.cart.repository.ItemPopularityRepository
 
-
-import akka.actor.typed.ActorRef
-import akka.pattern.StatusReply
-
-
+import java.util.concurrent.TimeoutException
+import scala.concurrent.Future
 
 
 class ShoppingCartServiceImpl(
     system: ActorSystem[_],
-    itemPopularityRepository: ItemPopularityRepository) 
+    itemPopularityRepository: ItemPopularityRepository)
     extends proto.ShoppingCartService {
 
-  
+
   import system.executionContext
 
   private val logger = LoggerFactory.getLogger(getClass)
@@ -33,14 +29,6 @@ class ShoppingCartServiceImpl(
 
   private val sharding = ClusterSharding(system)
 
-  
-  private val blockingJdbcExecutor: ExecutionContext =
-    system.dispatchers.lookup(
-      DispatcherSelector
-        .fromConfig("akka.projection.jdbc.blocking-jdbc-dispatcher")
-    ) 
-
-  
   override def addItem(in: proto.AddItemRequest): Future[proto.Cart] = {
     logger.info("addItem {} to cart {}", in.itemId, in.cartId)
     val entityRef = sharding.entityRefFor(ShoppingCart.EntityKey, in.cartId)
@@ -66,7 +54,7 @@ class ShoppingCartServiceImpl(
     convertError(response)
   }
 
-  
+
   override def checkout(in: proto.CheckoutRequest): Future[proto.Cart] = {
     logger.info("checkout {}", in.cartId)
     val entityRef = sharding.entityRefFor(ShoppingCart.EntityKey, in.cartId)
@@ -89,9 +77,9 @@ class ShoppingCartServiceImpl(
       }
     convertError(response)
   }
-  
 
-  
+
+
   private def toProtoCart(cart: ShoppingCart.Summary): proto.Cart = {
     proto.Cart(
       cart.items.iterator.map { case (itemId, quantity) =>
@@ -99,7 +87,7 @@ class ShoppingCartServiceImpl(
       }.toSeq,
       cart.checkedOut)
   }
-  
+
 
   private def convertError[T](response: Future[T]): Future[T] = {
     response.recoverWith {
@@ -114,14 +102,10 @@ class ShoppingCartServiceImpl(
     }
   }
 
-  
+
   override def getItemPopularity(in: proto.GetItemPopularityRequest)
       : Future[proto.GetItemPopularityResponse] = {
-    Future { 
-      ScalikeJdbcSession.withSession { session =>
-        itemPopularityRepository.getItem(session, in.itemId)
-      }
-    }(blockingJdbcExecutor).map {
+    itemPopularityRepository.getItem(in.itemId).map {
       case Some(count) =>
         proto.GetItemPopularityResponse(in.itemId, count)
       case None =>

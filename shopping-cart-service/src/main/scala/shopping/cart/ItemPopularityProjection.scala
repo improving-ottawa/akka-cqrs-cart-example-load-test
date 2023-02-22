@@ -1,4 +1,3 @@
-
 package shopping.cart
 
 import akka.actor.typed.ActorSystem
@@ -8,47 +7,53 @@ import akka.persistence.jdbc.query.scaladsl.JdbcReadJournal
 import akka.persistence.query.Offset
 import akka.projection.eventsourced.EventEnvelope
 import akka.projection.eventsourced.scaladsl.EventSourcedProvider
-import akka.projection.jdbc.scaladsl.JdbcProjection
-import akka.projection.scaladsl.{ ExactlyOnceProjection, SourceProvider }
-import akka.projection.{ ProjectionBehavior, ProjectionId }
-import shopping.cart.repository.{ ItemPopularityRepository, ScalikeJdbcSession }
+import akka.projection.scaladsl.{ExactlyOnceProjection, SourceProvider}
+import akka.projection.{Projection, ProjectionBehavior, ProjectionId}
 
 object ItemPopularityProjection {
-  
+
+  /**
+   * `(tag) => SourceProvider[Offset, EventEnvelope[ShoppingCart.Event]]`
+   */
+  type SourceFactory = (String, ActorSystem[_]) => SourceProvider[
+    Offset,
+    EventEnvelope[ShoppingCart.Event]]
+
+  /**
+   * `(projectionId, sourceProvider, tag) => Projection[EventEnvelope[ShoppingCart.Event]]`
+   */
+  type ProjectionFactory = (
+    ProjectionId,
+      SourceProvider[
+        Offset,
+        EventEnvelope[ShoppingCart.Event]], String) => Projection[EventEnvelope[ShoppingCart.Event]]
+
   def init(
       system: ActorSystem[_],
-      repository: ItemPopularityRepository): Unit = {
-    ShardedDaemonProcess(system).init( 
+      sourceFactory: SourceFactory,
+      projectionFactory: ProjectionFactory): Unit = {
+    ShardedDaemonProcess(system).init(
       name = "ItemPopularityProjection",
       ShoppingCart.tags.size,
       index =>
-        ProjectionBehavior(createProjectionFor(system, repository, index)),
+        ProjectionBehavior(createProjectionFor(system, sourceFactory, projectionFactory, index)),
       ShardedDaemonProcessSettings(system),
       Some(ProjectionBehavior.Stop))
   }
-  
 
   private def createProjectionFor(
       system: ActorSystem[_],
-      repository: ItemPopularityRepository,
+      sourceFactory: SourceFactory,
+      projectionFactory: ProjectionFactory,
       index: Int)
-      : ExactlyOnceProjection[Offset, EventEnvelope[ShoppingCart.Event]] = {
-    val tag = ShoppingCart.tags(index) 
+      : Projection[EventEnvelope[ShoppingCart.Event]] = {
+    val tag = ShoppingCart.tags(index)
 
-    val sourceProvider
-        : SourceProvider[Offset, EventEnvelope[ShoppingCart.Event]] = 
-      EventSourcedProvider.eventsByTag[ShoppingCart.Event](
-        system = system,
-        readJournalPluginId = JdbcReadJournal.Identifier, 
-        tag = tag)
-
-    JdbcProjection.exactlyOnce( 
-      projectionId = ProjectionId("ItemPopularityProjection", tag),
-      sourceProvider,
-      handler = () =>
-        new ItemPopularityProjectionHandler(tag, system, repository), 
-      sessionFactory = () => new ScalikeJdbcSession())(system)
+    projectionFactory(
+      ProjectionId("ItemPopularityProjection", tag),
+      sourceFactory(tag, system),
+      tag
+    )
   }
 
 }
-

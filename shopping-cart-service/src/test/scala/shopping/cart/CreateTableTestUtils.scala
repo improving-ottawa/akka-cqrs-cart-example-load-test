@@ -12,7 +12,7 @@ import akka.actor.typed.ActorSystem
 import akka.persistence.jdbc.testkit.scaladsl.SchemaUtils
 import akka.projection.jdbc.scaladsl.JdbcProjection
 import org.slf4j.LoggerFactory
-import shopping.cart.repository.ScalikeJdbcSession
+import shopping.cart.repository.jdbc.ScalikeJdbcSession
 
 object CreateTableTestUtils {
 
