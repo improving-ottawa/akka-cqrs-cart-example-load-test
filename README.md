@@ -22,7 +22,20 @@ Navigate to shipping-cart-service, and start necessary infrastructure (Kafka - f
 $> shopping-cart-service/docker-compose up
 ```
 
-If this is the first time starting the application, you must also bootstrap the journal
+If this is the first time starting the application, you must also bootstrap the journal.
+
+```
+To use Cassandra database as a journal:
+
+# create keyspace
+docker exec -i shopping-cart-service-cassandra-db-1 cqlsh -t < ddl-scripts/create_keyspace.cql
+
+# creates the tables needed for Akka Persistence
+# as well as the offset store table for Akka Projection
+docker exec -i shopping-cart-service-cassandra-db-1 cqlsh -t < ddl-scripts/create_es_tables.cql
+```
+
+
 
 Once all infra containers are ready, start a at least one node of the shopping cart service:
 
