@@ -32,7 +32,7 @@ object Main {
   }
 
   def init(system: ActorSystem[_], orderService: ShoppingOrderService): Unit = {
-    
+
     ScalikeJdbcSetup.init(system)
 
     AkkaManagement(system).start()
@@ -43,11 +43,12 @@ object Main {
     val itemPopularityRepository = new ItemPopularityRepositoryImpl()
     ItemPopularityProjection.init(system, itemPopularityRepository)
 
-    PublishEventsProjection.init(system)
+    // disable kafka domain event projection: goal is to minimize moving parts involved in a load test
+    //PublishEventsProjection.init(system)
 
-    
-    SendOrderProjection.init(system, orderService) 
-    
+
+    SendOrderProjection.init(system, orderService)
+
 
     val grpcInterface =
       system.settings.config.getString("shopping-cart-service.grpc.interface")
@@ -56,10 +57,10 @@ object Main {
     val grpcService =
       new ShoppingCartServiceImpl(system, itemPopularityRepository)
     ShoppingCartServer.start(grpcInterface, grpcPort, system, grpcService)
-    
+
   }
 
-  protected def orderServiceClient( 
+  protected def orderServiceClient(
       system: ActorSystem[_]): ShoppingOrderService = {
     val orderServiceClientSettings =
       GrpcClientSettings
@@ -69,6 +70,6 @@ object Main {
         .withTls(false)
     ShoppingOrderServiceClient(orderServiceClientSettings)(system)
   }
-  
+
 
 }
