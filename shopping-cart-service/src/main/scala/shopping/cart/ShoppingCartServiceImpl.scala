@@ -1,6 +1,5 @@
 package shopping.cart
 
-
 import akka.actor.typed.{ActorRef, ActorSystem}
 import akka.cluster.sharding.typed.scaladsl.ClusterSharding
 import akka.grpc.GrpcServiceException
@@ -17,7 +16,8 @@ import scala.concurrent.Future
 class ShoppingCartServiceImpl(
     system: ActorSystem[_],
     itemPopularityRepository: ItemPopularityRepository)
-   extends proto.ShoppingCartService {
+    extends proto.ShoppingCartService {
+
 
   import system.executionContext
 
@@ -112,6 +112,5 @@ class ShoppingCartServiceImpl(
         proto.GetItemPopularityResponse(in.itemId, 0L)
     }
   }
-
 }
 

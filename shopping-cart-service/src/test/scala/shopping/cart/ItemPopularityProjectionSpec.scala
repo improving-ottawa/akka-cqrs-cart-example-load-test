@@ -9,6 +9,7 @@ import akka.projection.scaladsl.Handler
 import akka.projection.testkit.scaladsl.{ProjectionTestKit, TestProjection, TestSourceProvider}
 import akka.stream.scaladsl.Source
 import org.scalatest.wordspec.AnyWordSpecLike
+import shopping.cart.projection.JdbcItemPopularityProjectionHandler
 import shopping.cart.repository.ItemPopularityRepository
 
 import java.time.Instant

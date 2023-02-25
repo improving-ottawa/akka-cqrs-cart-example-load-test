@@ -1,26 +1,25 @@
-package shopping.cart
+package shopping.cart.projection
 
 import akka.actor.typed.ActorSystem
 import akka.persistence.jdbc.query.javadsl.JdbcReadJournal
-import akka.persistence.query.Offset
-import akka.projection.ProjectionId
 import akka.projection.eventsourced.EventEnvelope
 import akka.projection.eventsourced.scaladsl.EventSourcedProvider
-import akka.projection.jdbc.scaladsl.{ JdbcHandler, JdbcProjection }
-import akka.projection.scaladsl.{ ExactlyOnceProjection, SourceProvider }
+import akka.projection.jdbc.scaladsl.{JdbcHandler, JdbcProjection}
 import org.slf4j.LoggerFactory
-import shopping.cart.ItemPopularityProjection.SourceFactory
+import shopping.cart.ShoppingCart
+import shopping.cart.projection.ItemPopularityProjection.SourceFactory
 import shopping.cart.repository.jdbc.JdbcItemPopularityRepositoryFactory.JdbcItemPopularityRepositoryFactory
 import shopping.cart.repository.jdbc.ScalikeJdbcSession
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.DurationInt
-import scala.concurrent.{ Await, Future }
+import scala.concurrent.{Await, Future}
 
+// TODO:  refactor to just be a Handler[EventEnvelop[ShoppingCart.Event]] will allow to collapse with
+//  [[CassandraItemPopularityProjectionHandler]] into something generic (and get rid of that nasty Await!)
 class JdbcItemPopularityProjectionHandler(
     tag: String,
     repoFactory: JdbcItemPopularityRepositoryFactory)
-
     extends JdbcHandler[
       EventEnvelope[ShoppingCart.Event],
       ScalikeJdbcSession]() {
@@ -83,16 +82,14 @@ class JdbcItemPopularityProjectionHandler(
 object JdbcItemPopularityProjectionHandler {
   def jdbcProjectionFactory(
       repoFactory: JdbcItemPopularityRepositoryFactory,
-      system: ActorSystem[_])(
-      projectionId: ProjectionId,
-      sourceProvider: SourceProvider[Offset, EventEnvelope[ShoppingCart.Event]],
-      tag: String)
-      : ExactlyOnceProjection[Offset, EventEnvelope[ShoppingCart.Event]] = {
-    JdbcProjection.exactlyOnce(
-      projectionId = projectionId,
-      sourceProvider,
-      handler = () => new JdbcItemPopularityProjectionHandler(tag, repoFactory),
-      sessionFactory = () => new ScalikeJdbcSession())(system)
+      system: ActorSystem[_]): ItemPopularityProjection.ProjectionFactory = {
+    (projectionId, sourceProvider, tag) =>
+      JdbcProjection.exactlyOnce(
+        projectionId = projectionId,
+        sourceProvider,
+        handler =
+          () => new JdbcItemPopularityProjectionHandler(tag, repoFactory),
+        sessionFactory = () => new ScalikeJdbcSession())(system)
   }
 
   def jdbcReadJournalSourceFactory: SourceFactory = (tag, system) =>

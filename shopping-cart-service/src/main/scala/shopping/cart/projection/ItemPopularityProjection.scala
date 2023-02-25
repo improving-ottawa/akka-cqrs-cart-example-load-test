@@ -1,4 +1,4 @@
-package shopping.cart
+package shopping.cart.projection
 
 import akka.actor.typed.ActorSystem
 import akka.cluster.sharding.typed.ShardedDaemonProcessSettings
@@ -7,6 +7,7 @@ import akka.persistence.query.Offset
 import akka.projection.eventsourced.EventEnvelope
 import akka.projection.scaladsl.SourceProvider
 import akka.projection.{Projection, ProjectionBehavior, ProjectionId}
+import shopping.cart.ShoppingCart
 
 object ItemPopularityProjection {
 

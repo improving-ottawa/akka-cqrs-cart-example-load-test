@@ -8,12 +8,10 @@ import akka.management.scaladsl.AkkaManagement
 import akka.stream.alpakka.cassandra.CassandraSessionSettings
 import akka.stream.alpakka.cassandra.scaladsl.{CassandraSession, CassandraSessionRegistry}
 import org.slf4j.LoggerFactory
-import shopping.cart.repository.{CassandraItemPopularityRepositoryImpl, ItemPopularityRepository}
-import shopping.cart.repository.jdbc.{JdbcItemPopularityRepository, JdbcItemPopularityRepositoryFactory, ScalikeJdbcSetup}
+import shopping.cart.projection.{CassandraItemPopularityProjectionHandler, ItemPopularityProjection}
+import shopping.cart.repository.CassandraItemPopularityRepository
 import shopping.order.proto.{ShoppingOrderService, ShoppingOrderServiceClient}
 
-import scala.concurrent.ExecutionContext
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.control.NonFatal
 
 object Main {
@@ -35,46 +33,48 @@ object Main {
 
   def init(system: ActorSystem[_], orderService: ShoppingOrderService): Unit = {
 
-    ScalikeJdbcSetup.init(system)
-
     AkkaManagement(system).start()
     ClusterBootstrap(system).start()
 
     ShoppingCart.init(system)
 
-    // JDBC
-    // construct some jdbc primitives
-    val jdbcBlockingExecutor: ExecutionContext = JdbcItemPopularityRepositoryFactory.blockingJdbcExecutor(system)
-    val jdbcRepoFactory = JdbcItemPopularityRepositoryFactory(jdbcBlockingExecutor)
+//    // JDBC
+//    // construct some jdbc primitives
+//    ScalikeJdbcSetup.init(system)
+//    val jdbcBlockingExecutor: ExecutionContext = JdbcItemPopularityRepositoryFactory.blockingJdbcExecutor(system)
+//    val jdbcRepoFactory = JdbcItemPopularityRepositoryFactory(jdbcBlockingExecutor)
+//
+//    val popularityRepo: ItemPopularityRepository = new JdbcItemPopularityRepository(jdbcRepoFactory)
 
-    val popularityRepo: ItemPopularityRepository = new JdbcItemPopularityRepository(jdbcRepoFactory)
-
-//    // read event journal from jdbc to source projection
+//    // read event journal from jdbc to source popularity projection
 //    val readJournalSourceFactory: ItemPopularityProjection.SourceFactory =
 //      JdbcItemPopularityProjectionHandler.jdbcReadJournalSourceFactory
 
-    // project event journal to jdbc projection
-    val projectionFactory: ItemPopularityProjection.ProjectionFactory =
-      JdbcItemPopularityProjectionHandler.jdbcProjectionFactory(jdbcRepoFactory, system)
+//    // project event journal to jdbc projection
+//    val projectionFactory: ItemPopularityProjection.ProjectionFactory =
+//      JdbcItemPopularityProjectionHandler.jdbcProjectionFactory(jdbcRepoFactory, system)
 
     // Cassandra
+    // read event journal from Cassandra to source popularity projection
+    val readJournalSourceFactory: ItemPopularityProjection.SourceFactory =
+    CassandraItemPopularityProjectionHandler.sourceFactory
 
     val sessionSettings = CassandraSessionSettings()
     val cassandraSession: CassandraSession =
       CassandraSessionRegistry.get(system).sessionFor(sessionSettings)
 
-    val itemPopularityRepository = new CassandraItemPopularityRepositoryImpl(cassandraSession)(system)
-    CassandraItemPopularityProjection.init(system, itemPopularityRepository)
+    val popularityRepo = new CassandraItemPopularityRepository(cassandraSession)(system)
 
-    // read event journal from Cassandra to source projection
-    val readJournalSourceFactory: ItemPopularityProjection.SourceFactory =
-    CassandraJournalSourceFactory.sourceFactory
+    // project event journal to cassandra projection
+    val projectionFactory: ItemPopularityProjection.ProjectionFactory =
+      CassandraItemPopularityProjectionHandler.cassandraProjectionFactory(popularityRepo)
 
     ItemPopularityProjection.init(system, readJournalSourceFactory, projectionFactory)
 
     // disable kafka domain event projection: goal is to minimize moving parts involved in a load test
     //PublishEventsProjection.init(system)
 
+    // disable projection to order service over grpc for the same reasons as above
     //SendOrderProjection.init(system, orderService)
 
     val grpcInterface =

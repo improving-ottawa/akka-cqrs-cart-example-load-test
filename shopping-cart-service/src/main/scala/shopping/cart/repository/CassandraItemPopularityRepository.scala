@@ -8,14 +8,9 @@ import com.datastax.oss.driver.api.core.cql.{BoundStatement, PreparedStatement}
 
 import scala.concurrent.Future
 
-trait CassandraItemPopularityRepository {
-  def update(itemId: String, delta: Int): Future[Unit]
-  def getItem(itemId: String): Future[Option[Long]]
-}
-
-class CassandraItemPopularityRepositoryImpl(cassandraSession: CassandraSession)(
+class CassandraItemPopularityRepository(cassandraSession: CassandraSession)(
     implicit actorSystem: ActorSystem[_])
-    extends CassandraItemPopularityRepository {
+    extends ItemPopularityRepository {
 
   val statementBinder: (Update, PreparedStatement) => BoundStatement =
     (update, preparedStatement) => preparedStatement.bind(update.delta, update.itemId)

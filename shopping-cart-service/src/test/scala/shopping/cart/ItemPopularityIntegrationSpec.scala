@@ -8,6 +8,7 @@ import akka.persistence.testkit.scaladsl.PersistenceInit
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.OptionValues
 import org.scalatest.wordspec.AnyWordSpecLike
+import shopping.cart.projection.{ItemPopularityProjection, JdbcItemPopularityProjectionHandler}
 import shopping.cart.repository.jdbc.{JdbcItemPopularityRepositoryFactory, ScalikeJdbcSession, ScalikeJdbcSetup}
 
 import scala.concurrent.{Await, Future}

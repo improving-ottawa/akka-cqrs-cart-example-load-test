@@ -1,4 +1,4 @@
-package shopping.cart
+package shopping.cart.projection
 
 import akka.actor.CoordinatedShutdown
 import akka.actor.typed.ActorSystem
@@ -11,12 +11,10 @@ import akka.persistence.query.Offset
 import akka.projection.eventsourced.EventEnvelope
 import akka.projection.eventsourced.scaladsl.EventSourcedProvider
 import akka.projection.jdbc.scaladsl.JdbcProjection
-import akka.projection.scaladsl.{ AtLeastOnceProjection, SourceProvider }
-import akka.projection.{ ProjectionBehavior, ProjectionId }
-import org.apache.kafka.common.serialization.{
-  ByteArraySerializer,
-  StringSerializer
-}
+import akka.projection.scaladsl.{AtLeastOnceProjection, SourceProvider}
+import akka.projection.{ProjectionBehavior, ProjectionId}
+import org.apache.kafka.common.serialization.{ByteArraySerializer, StringSerializer}
+import shopping.cart.ShoppingCart
 import shopping.cart.repository.jdbc.ScalikeJdbcSession
 
 object PublishEventsProjection {

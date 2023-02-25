@@ -74,7 +74,9 @@ class JdbcItemPopularityRepositoryFactoryImpl(
 object JdbcItemPopularityRepositoryFactory {
   type JdbcItemPopularityRepositoryFactory =
     ScalikeJdbcSession => ItemPopularityRepository
+
   def apply(ec: ExecutionContext): JdbcItemPopularityRepositoryFactory = new JdbcItemPopularityRepositoryFactoryImpl(ec)
+
   def blockingJdbcExecutor(system: ActorSystem[_]): ExecutionContext =
     system.dispatchers.lookup(
       DispatcherSelector.fromConfig(

@@ -1,7 +1,6 @@
 package shopping.cart.repository
 
 import scala.concurrent.Future
-
 trait ItemPopularityRepository {
   def update(itemId: String, delta: Int): Future[Unit]
 
