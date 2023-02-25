@@ -41,7 +41,7 @@ class CassandraItemPopularityProjectionHandler(
     (for {
       _ <- repo.update(itemId, quantity)
       r <- logItemCount(itemId)
-    } yield r).mapTo[Done]
+    } yield r).map(_ => Done)
   }
 
   private def logItemCount(

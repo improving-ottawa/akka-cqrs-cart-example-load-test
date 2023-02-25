@@ -64,6 +64,7 @@ object Main {
       CassandraSessionRegistry.get(system).sessionFor(sessionSettings)
 
     val itemPopularityRepository = new CassandraItemPopularityRepositoryImpl(cassandraSession)(system)
+    CassandraItemPopularityProjection.init(system, itemPopularityRepository)
 
     // read event journal from Cassandra to source projection
     val readJournalSourceFactory: ItemPopularityProjection.SourceFactory =

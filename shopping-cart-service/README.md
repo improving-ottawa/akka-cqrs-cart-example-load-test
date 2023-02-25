@@ -13,7 +13,7 @@
     docker exec -i shopping-cart-service-postgres-db-1 psql -U shopping-cart -t < ddl-scripts/create_user_tables.sql
     ```
 
-   OR, for Cassandra as a journal:
+   OR, for Cassandra as a journal & projection:
    ```shell
     docker-compose up -d
 
@@ -22,8 +22,10 @@
     docker exec -i shopping-cart-service-cassandra-db-1 cqlsh -t < ddl-scripts/create_keyspace.cql
     
     # creates the tables needed for Akka Persistence
-    # as well as the offset store table for Akka Projection
     docker exec -i shopping-cart-service-cassandra-db-1 cqlsh -t < ddl-scripts/create_es_tables.cql
+   
+    # finally, the offset store table for Akka Projections and any projection tables
+    docker exec -i shopping-cart-service-cassandra-db-1 cqlsh -t < ddl-scripts/create_projection_tables.cql
     ```
 
 2. Start a first node:
