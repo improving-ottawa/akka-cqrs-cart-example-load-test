@@ -40,29 +40,32 @@ object Main {
 
     ShoppingCart.init(system)
 
+    // JDBC
     // construct some jdbc primitives
     val jdbcBlockingExecutor: ExecutionContext = JdbcItemPopularityRepositoryFactory.blockingJdbcExecutor(system)
     val jdbcRepoFactory = JdbcItemPopularityRepositoryFactory(jdbcBlockingExecutor)
 
     val popularityRepo: ItemPopularityRepository = new JdbcItemPopularityRepository(jdbcRepoFactory)
 
-    // read event journal from jdbc to source projection
-    val readJournalSourceFactory: ItemPopularityProjection.SourceFactory =
-      JdbcItemPopularityProjectionHandler.jdbcReadJournalSourceFactory
+//    // read event journal from jdbc to source projection
+//    val readJournalSourceFactory: ItemPopularityProjection.SourceFactory =
+//      JdbcItemPopularityProjectionHandler.jdbcReadJournalSourceFactory
 
     // project event journal to jdbc projection
     val projectionFactory: ItemPopularityProjection.ProjectionFactory =
       JdbcItemPopularityProjectionHandler.jdbcProjectionFactory(jdbcRepoFactory, system)
+
+    // Cassandra
+    // read event journal from Cassandra to source projection
+    val readJournalSourceFactory: ItemPopularityProjection.SourceFactory =
+    CassandraJournalSourceFactory.sourceFactory
 
     ItemPopularityProjection.init(system, readJournalSourceFactory, projectionFactory)
 
     // disable kafka domain event projection: goal is to minimize moving parts involved in a load test
     //PublishEventsProjection.init(system)
 
-
-    SendOrderProjection.init(system, orderService)
-
-    SendOrderProjection.init(system, orderService)
+    //SendOrderProjection.init(system, orderService)
 
     val grpcInterface =
       system.settings.config.getString("shopping-cart-service.grpc.interface")

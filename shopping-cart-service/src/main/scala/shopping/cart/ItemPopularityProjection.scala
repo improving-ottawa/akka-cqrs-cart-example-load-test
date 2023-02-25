@@ -3,17 +3,15 @@ package shopping.cart
 import akka.actor.typed.ActorSystem
 import akka.cluster.sharding.typed.ShardedDaemonProcessSettings
 import akka.cluster.sharding.typed.scaladsl.ShardedDaemonProcess
-import akka.persistence.jdbc.query.scaladsl.JdbcReadJournal
 import akka.persistence.query.Offset
 import akka.projection.eventsourced.EventEnvelope
-import akka.projection.eventsourced.scaladsl.EventSourcedProvider
-import akka.projection.scaladsl.{ExactlyOnceProjection, SourceProvider}
+import akka.projection.scaladsl.SourceProvider
 import akka.projection.{Projection, ProjectionBehavior, ProjectionId}
 
 object ItemPopularityProjection {
 
   /**
-   * `(tag) => SourceProvider[Offset, EventEnvelope[ShoppingCart.Event]]`
+   * `(tag, system) => SourceProvider[Offset, EventEnvelope[ShoppingCart.Event]]`
    */
   type SourceFactory = (String, ActorSystem[_]) => SourceProvider[
     Offset,
