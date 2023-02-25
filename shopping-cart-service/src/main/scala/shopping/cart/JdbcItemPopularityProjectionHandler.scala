@@ -20,6 +20,7 @@ import scala.concurrent.{ Await, Future }
 class JdbcItemPopularityProjectionHandler(
     tag: String,
     repoFactory: JdbcItemPopularityRepositoryFactory)
+
     extends JdbcHandler[
       EventEnvelope[ShoppingCart.Event],
       ScalikeJdbcSession]() {

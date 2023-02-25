@@ -5,8 +5,10 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.grpc.GrpcClientSettings
 import akka.management.cluster.bootstrap.ClusterBootstrap
 import akka.management.scaladsl.AkkaManagement
+import akka.stream.alpakka.cassandra.CassandraSessionSettings
+import akka.stream.alpakka.cassandra.scaladsl.{CassandraSession, CassandraSessionRegistry}
 import org.slf4j.LoggerFactory
-import shopping.cart.repository.ItemPopularityRepository
+import shopping.cart.repository.{CassandraItemPopularityRepositoryImpl, ItemPopularityRepository}
 import shopping.cart.repository.jdbc.{JdbcItemPopularityRepository, JdbcItemPopularityRepositoryFactory, ScalikeJdbcSetup}
 import shopping.order.proto.{ShoppingOrderService, ShoppingOrderServiceClient}
 
@@ -56,6 +58,13 @@ object Main {
       JdbcItemPopularityProjectionHandler.jdbcProjectionFactory(jdbcRepoFactory, system)
 
     // Cassandra
+
+    val sessionSettings = CassandraSessionSettings()
+    val cassandraSession: CassandraSession =
+      CassandraSessionRegistry.get(system).sessionFor(sessionSettings)
+
+    val itemPopularityRepository = new CassandraItemPopularityRepositoryImpl(cassandraSession)(system)
+
     // read event journal from Cassandra to source projection
     val readJournalSourceFactory: ItemPopularityProjection.SourceFactory =
     CassandraJournalSourceFactory.sourceFactory

@@ -1,5 +1,6 @@
 package shopping.cart
 
+
 import akka.actor.typed.{ActorRef, ActorSystem}
 import akka.cluster.sharding.typed.scaladsl.ClusterSharding
 import akka.grpc.GrpcServiceException
@@ -7,7 +8,6 @@ import akka.pattern.StatusReply
 import akka.util.Timeout
 import io.grpc.Status
 import org.slf4j.LoggerFactory
-<<<<<<< HEAD
 import shopping.cart.repository.ItemPopularityRepository
 
 import java.util.concurrent.TimeoutException
@@ -17,17 +17,7 @@ import scala.concurrent.Future
 class ShoppingCartServiceImpl(
     system: ActorSystem[_],
     itemPopularityRepository: ItemPopularityRepository)
-=======
-import shopping.cart.repository.{ JdbcItemPopularityRepository, ScalikeJdbcSession }
-import akka.actor.typed.ActorRef
-import akka.pattern.StatusReply
-
-class ShoppingCartServiceImpl(
-    system: ActorSystem[_],
-    itemPopularityRepository: JdbcItemPopularityRepository)
->>>>>>> 7c9f36f (Along the way to Cassandra readside projection)
-    extends proto.ShoppingCartService {
-
+   extends proto.ShoppingCartService {
 
   import system.executionContext
 
@@ -39,13 +29,6 @@ class ShoppingCartServiceImpl(
 
   private val sharding = ClusterSharding(system)
 
-<<<<<<< HEAD
-=======
-
-
-
-
->>>>>>> 7c9f36f (Along the way to Cassandra readside projection)
   override def addItem(in: proto.AddItemRequest): Future[proto.Cart] = {
     logger.info("addItem {} to cart {}", in.itemId, in.cartId)
     val entityRef = sharding.entityRefFor(ShoppingCart.EntityKey, in.cartId)
@@ -122,11 +105,7 @@ class ShoppingCartServiceImpl(
 
   override def getItemPopularity(in: proto.GetItemPopularityRequest)
       : Future[proto.GetItemPopularityResponse] = {
-<<<<<<< HEAD
     itemPopularityRepository.getItem(in.itemId).map {
-=======
-    getItemPopularityJdbc(in.itemId).map {
->>>>>>> 7c9f36f (Along the way to Cassandra readside projection)
       case Some(count) =>
         proto.GetItemPopularityResponse(in.itemId, count)
       case None =>
@@ -134,17 +113,5 @@ class ShoppingCartServiceImpl(
     }
   }
 
-  private val blockingJdbcExecutor: ExecutionContext =
-    system.dispatchers.lookup(
-      DispatcherSelector
-        .fromConfig("akka.projection.jdbc.blocking-jdbc-dispatcher")
-    )
-  private def getItemPopularityJdbc(itemId: String): Future[Option[Long]] = {
-    Future {
-      ScalikeJdbcSession.withSession { session =>
-        itemPopularityRepository.getItem(session, itemId)
-      }
-    }(blockingJdbcExecutor)
-  }
 }
 

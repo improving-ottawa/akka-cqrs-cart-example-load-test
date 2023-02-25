@@ -9,8 +9,8 @@ import com.datastax.oss.driver.api.core.cql.{BoundStatement, PreparedStatement}
 import scala.concurrent.Future
 
 trait CassandraItemPopularityRepository {
-  def update(session: ScalikeJdbcSession, itemId: String, delta: Int): Future[Unit]
-  def getItem(session: ScalikeJdbcSession, itemId: String): Future[Option[Long]]
+  def update(itemId: String, delta: Int): Future[Unit]
+  def getItem(itemId: String): Future[Option[Long]]
 }
 
 class CassandraItemPopularityRepositoryImpl(cassandraSession: CassandraSession)(
@@ -20,7 +20,6 @@ class CassandraItemPopularityRepositoryImpl(cassandraSession: CassandraSession)(
   val statementBinder: (String, PreparedStatement) => BoundStatement =
     (itemId, preparedStatement) => preparedStatement.bind(itemId)
   override def update(
-      session: ScalikeJdbcSession,
       itemId: String,
       delta: Int): Future[Unit] = {
     Source(Seq(itemId))
@@ -35,7 +34,6 @@ class CassandraItemPopularityRepositoryImpl(cassandraSession: CassandraSession)(
   }
 
   override def getItem(
-      session: ScalikeJdbcSession,
       itemId: String): Future[Option[Long]] = {
     CassandraSource(s"SELECT count FROM cart_service.item_popularity WHERE id = ?", itemId)(cassandraSession)
       .map(_.getLong("count"))
