@@ -1,7 +1,15 @@
+## Housekeeping
+
+Tests are currently broken because they were written strictly against the postgres write/read side and we have swapped in 
+Cassandra as the primary/only persistence layer but have not yet written tests.  Cassandra read/write side were tested ad-hoc by running
+the sample code as described below.
+
 ## Running the sample code
 
-1. Start a local PostgresSQL server on default port 5432 and a Kafka broker on port 9092. The included `docker-compose.yml` starts everything required for running locally.
+1. Depending on which persistence layers are configured, start required local infrastructure. `docker-compose.yml` should start everything required for running locally.
+2. (Optional) Upon running the application for the first time, database schemas must be bootstrapped, as per below
 
+   For Postgres DB:
     ```shell
     docker-compose up -d
 
