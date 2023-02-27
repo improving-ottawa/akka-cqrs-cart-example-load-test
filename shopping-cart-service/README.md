@@ -39,19 +39,19 @@ the sample code as described below.
 2. Start a first node:
 
     ```shell
-    sbt -Dconfig.resource=local1.conf run
+    sbt 'set run/javaOptions += "-Dconfig.resource=local1.conf"; run'
     ```
 
 3. (Optional) Start another node with different ports:
 
     ```shell
-    sbt -Dconfig.resource=local2.conf run
+    sbt 'set run/javaOptions += "-Dconfig.resource=local2.conf"; run'
     ```
 
 4. (Optional) More can be started:
 
     ```shell
-    sbt -Dconfig.resource=local3.conf run
+    sbt 'set run/javaOptions += "-Dconfig.resource=local3.conf"; run'
     ```
 
 5. Check for service readiness

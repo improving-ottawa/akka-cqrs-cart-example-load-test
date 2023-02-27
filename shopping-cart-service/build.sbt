@@ -21,7 +21,7 @@ Test / parallelExecution := false
 Test / testOptions += Tests.Argument("-oDF")
 Test / logBuffered := false
 
-run / fork := false
+run / fork := true
 Global / cancelable := false // ctrl-c
 
 val AkkaVersion = "2.7.0"
