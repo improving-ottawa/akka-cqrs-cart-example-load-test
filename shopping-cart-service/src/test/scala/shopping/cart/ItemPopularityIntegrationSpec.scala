@@ -1,22 +1,18 @@
 package shopping.cart
 
-import scala.concurrent.Await
-import scala.concurrent.Future
-import scala.concurrent.duration._
-
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.cluster.MemberStatus
 import akka.cluster.sharding.typed.scaladsl.ClusterSharding
-import akka.cluster.typed.Cluster
-import akka.cluster.typed.Join
+import akka.cluster.typed.{Cluster, Join}
 import akka.persistence.testkit.scaladsl.PersistenceInit
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.OptionValues
 import org.scalatest.wordspec.AnyWordSpecLike
-import shopping.cart.repository.ItemPopularityRepositoryImpl
-import shopping.cart.repository.ScalikeJdbcSetup
-import shopping.cart.repository.ScalikeJdbcSession
+import shopping.cart.projection.{ItemPopularityProjection, JdbcItemPopularityProjectionHandler}
+import shopping.cart.repository.jdbc.{JdbcItemPopularityRepositoryFactory, ScalikeJdbcSession, ScalikeJdbcSetup}
+
+import scala.concurrent.{Await, Future}
+import scala.concurrent.duration._
 
 object ItemPopularityIntegrationSpec {
   val config: Config =
@@ -28,8 +24,9 @@ class ItemPopularityIntegrationSpec
     with AnyWordSpecLike
     with OptionValues {
 
-  private lazy val itemPopularityRepository =
-    new ItemPopularityRepositoryImpl()
+  private val ec = JdbcItemPopularityRepositoryFactory.blockingJdbcExecutor(system)
+  private lazy val itemPopularityRepositoryFactory =
+    JdbcItemPopularityRepositoryFactory(ec)
 
   override protected def beforeAll(): Unit = {
     ScalikeJdbcSetup.init(system)
@@ -42,7 +39,9 @@ class ItemPopularityIntegrationSpec
 
     ShoppingCart.init(system)
 
-    ItemPopularityProjection.init(system, itemPopularityRepository)
+    val jdbcProjectionFactory = JdbcItemPopularityProjectionHandler.jdbcProjectionFactory(itemPopularityRepositoryFactory, system) _
+    val jdbcSourceFactory = JdbcItemPopularityProjectionHandler.jdbcReadJournalSourceFactory
+    ItemPopularityProjection.init(system, jdbcSourceFactory, jdbcProjectionFactory)
 
     super.beforeAll()
   }
@@ -77,7 +76,7 @@ class ItemPopularityIntegrationSpec
 
       eventually {
         ScalikeJdbcSession.withSession { session =>
-          itemPopularityRepository.getItem(session, item1).value should ===(3)
+          itemPopularityRepositoryFactory(session).getItem(item1).futureValue should ===(Some(3))
         }
       }
 
@@ -91,9 +90,8 @@ class ItemPopularityIntegrationSpec
 
       eventually {
         ScalikeJdbcSession.withSession { session =>
-          itemPopularityRepository.getItem(session, item2).value should ===(
-            5 + 4)
-          itemPopularityRepository.getItem(session, item1).value should ===(3)
+          itemPopularityRepositoryFactory(session).getItem(item2).futureValue should ===(Some(5 + 4))
+          itemPopularityRepositoryFactory(session).getItem(item1).futureValue should ===(Some(3))
         }
       }
     }

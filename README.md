@@ -16,31 +16,20 @@ Currently the scenario only involves the shopping-cart-service (taken from Akka'
 
 ### To run the load test
 
-Navigate to shipping-cart-service, and start necessary infrastructure (Kafka - for now, Postgres - projections, Cassandra - journal/snapshots):
+Navigate to shopping-cart-service, and start necessary infrastructure which is currently only Cassandra for journal/snapshots and read-side projections:
 
 ```
-$> shopping-cart-service/docker-compose up -d
+$> shopping-cart-service/docker-compose up
 ```
 
-If this is the first time starting the application, you must also bootstrap the journal.
-
-```
-To use Cassandra database as a journal:
-
-# create keyspace
-docker exec -i shopping-cart-service-cassandra-db-1 cqlsh -t < ddl-scripts/create_keyspace.cql
-
-# creates the tables needed for Akka Persistence
-# as well as the offset store table for Akka Projection
-docker exec -i shopping-cart-service-cassandra-db-1 cqlsh -t < ddl-scripts/create_es_tables.cql
-```
-
-
+If this is the first time starting the application, you must also:
+- bootstrap the database schemas, as per instructions shopping-cart-service/README.md
+- publish the shopping-cart-service locally: `$> cd shopping-cart-service; sbt publishLocal`
 
 Once all infra containers are ready, start a at least one node of the shopping cart service:
 
 ```
-$> cd shopping-cart-service; sbt -Dconfig.resource=local1.conf run
+$> cd shopping-cart-service; sbt 'set run/javaOptions +="-Dconfig.resource=local1.conf"; run'
 ```
 
 Once the shopping cart service is active, the load test can be started:

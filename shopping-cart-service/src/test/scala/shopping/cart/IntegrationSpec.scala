@@ -31,7 +31,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.Span
 import org.scalatest.wordspec.AnyWordSpec
 import org.slf4j.LoggerFactory
-import shopping.cart.repository.ScalikeJdbcSetup
+import shopping.cart.repository.jdbc.ScalikeJdbcSetup
 import shopping.order.proto.OrderRequest
 import shopping.order.proto.OrderResponse
 import shopping.order.proto.ShoppingOrderService

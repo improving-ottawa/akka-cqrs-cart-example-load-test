@@ -1,7 +1,4 @@
-package shopping.cart
-
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
+package shopping.cart.projection
 
 import akka.Done
 import akka.actor.typed.ActorSystem
@@ -10,13 +7,14 @@ import akka.projection.eventsourced.EventEnvelope
 import akka.projection.scaladsl.Handler
 import akka.util.Timeout
 import org.slf4j.LoggerFactory
-import shopping.order.proto.Item
-import shopping.order.proto.OrderRequest
-import shopping.order.proto.ShoppingOrderService
+import shopping.cart.ShoppingCart
+import shopping.order.proto.{Item, OrderRequest, ShoppingOrderService}
+
+import scala.concurrent.{ExecutionContext, Future}
 
 class SendOrderProjectionHandler(
     system: ActorSystem[_],
-    orderService: ShoppingOrderService) 
+    orderService: ShoppingOrderService)
     extends Handler[EventEnvelope[ShoppingCart.Event]] {
   private val log = LoggerFactory.getLogger(getClass)
   private implicit val ec: ExecutionContext =
@@ -43,7 +41,7 @@ class SendOrderProjectionHandler(
   private def sendOrder(checkout: ShoppingCart.CheckedOut): Future[Done] = {
     val entityRef =
       sharding.entityRefFor(ShoppingCart.EntityKey, checkout.cartId)
-    entityRef.ask(ShoppingCart.Get).flatMap { cart => 
+    entityRef.ask(ShoppingCart.Get).flatMap { cart =>
       val items =
         cart.items.iterator.map { case (itemId, quantity) =>
           Item(itemId, quantity)
@@ -53,7 +51,7 @@ class SendOrderProjectionHandler(
         items.size,
         checkout.cartId)
       val orderReq = OrderRequest(checkout.cartId, items)
-      orderService.order(orderReq).map(_ => Done) 
+      orderService.order(orderReq).map(_ => Done)
     }
   }
 

@@ -27,7 +27,7 @@ val AkkaHttpVersion = "10.4.0"
 val AkkaManagementVersion = "1.2.0"
 val AkkaPersistenceJdbcVersion = "5.2.0"
 val AlpakkaKafkaVersion = "4.0.0"
-val AkkaProjectionVersion = "1.3.0"
+val AkkaProjectionVersion = "1.3.1"
 val ScalikeJdbcVersion = "3.5.0"
 
 enablePlugins(AkkaGrpcPlugin)
@@ -50,6 +50,7 @@ libraryDependencies ++= Seq(
 // cassandra persistence
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-persistence-cassandra" % "1.1.0",
+  "com.lightbend.akka" %% "akka-projection-cassandra" % AkkaProjectionVersion,
   "com.typesafe.akka" %% "akka-persistence" % AkkaVersion,
   "com.typesafe.akka" %% "akka-persistence-query" % AkkaVersion,
   "com.typesafe.akka" %% "akka-cluster-tools" % AkkaVersion
