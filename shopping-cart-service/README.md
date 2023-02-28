@@ -6,8 +6,14 @@ the sample code as described below.
 
 ## Running the sample code
 
-1. Depending on which persistence layers are configured, start required local infrastructure. `docker-compose.yml` should start everything required for running locally.
-2. (Optional) Upon running the application for the first time, database schemas must be bootstrapped, as per below
+1. Make `shopping-cart-service` directory as your current working directory. For example, 
+
+    ```shell
+    cd ~/akka-cqrs-cart-example-load-test/shopping-cart-service
+    ```
+
+2. Depending on which persistence layers are configured, start required local infrastructure. `docker-compose.yml` should start everything required for running locally.
+3. (Optional) Upon running the application for the first time, database schemas must be bootstrapped, as per below
 
    For Postgres DB:
     ```shell
@@ -36,31 +42,37 @@ the sample code as described below.
     docker exec -i shopping-cart-service-cassandra-db-1 cqlsh -t < ddl-scripts/create_projection_tables.cql
     ```
 
-2. Start a first node:
+4. Compile the `shopping-cart-service` code
+
+    ```shell
+    sbt clean compile
+    ```
+
+5. Start a first node:
 
     ```shell
     sbt 'set run/javaOptions += "-Dconfig.resource=local1.conf"; run'
     ```
 
-3. (Optional) Start another node with different ports:
+6. (Optional) Start another node with different ports:
 
     ```shell
     sbt 'set run/javaOptions += "-Dconfig.resource=local2.conf"; run'
     ```
 
-4. (Optional) More can be started:
+7. (Optional) More can be started:
 
     ```shell
     sbt 'set run/javaOptions += "-Dconfig.resource=local3.conf"; run'
     ```
 
-5. Check for service readiness
+8. Check for service readiness
 
     ```shell
     curl http://localhost:9101/ready
     ```
 
-6. Try it with [grpcurl](https://github.com/fullstorydev/grpcurl):
+9. Try it with [grpcurl](https://github.com/fullstorydev/grpcurl):
 
     ```shell
     # add item to cart
@@ -79,4 +91,18 @@ the sample code as described below.
     grpcurl -d '{"itemId":"socks"}' -plaintext 127.0.0.1:8101 shoppingcart.ShoppingCartService.GetItemPopularity
     ```
 
-    or same `grpcurl` commands to port 8102 to reach node 2.
+    On successful execution of the above `grpccurl` commands you should have the following record counts in tables in the `cart_service` keyspace (assuming you are using Cassandra/ScyllaDB as your persistence layer):
+    ```
+   Table Name                Record Count
+   ----------------------    ---------------
+   all_persistence_ids       1
+   item_popularity           1
+   offset_store              1
+   tag_scanning              1
+   messages                  3
+   tag_views                 3
+   metadata                  0
+   snapshots                 0
+   projection_management     0
+   ```
+10. Optional, if you have launched additional `shopping-cart-service` instances, as mentioned above, then issue similar `grpcurl` commands for port 8102 and 8103 to reach to 2nd and 3rd instances of `shopping-cart-service`, respectively. 
