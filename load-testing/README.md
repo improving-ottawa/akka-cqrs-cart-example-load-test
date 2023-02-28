@@ -1,6 +1,10 @@
-## Cart service load test
+# Cart service load test
 
-Very simple load test project for driving load to the _**Shopping Cart Service**_ over grpc using [Gatling](https://gatling.io/) and [grpc-gatling](https://github.com/phiSgr/gatling-grpc) extension.
+Very simple load test project for driving load to the _**Shopping Cart Service**_ over grpc using [Gatling](https://gatling.io/) and [grpc-gatling](https://github.com/phiSgr/gatling-grpc) extension. 
+
+## Running the load test locally
+
+Please use the following instructions to run this load test on your local machine.
 
 1.  Deploy `shopping-cart-service` locally:
 
@@ -11,7 +15,7 @@ Very simple load test project for driving load to the _**Shopping Cart Service**
     $> sbt 'set run/javaOptions += "-Dconfig.resource=local1.conf"; run'
     ```
 
-2. For load testing, launch the `gatling` test by execute following commands in a separate command-shell:
+2. For load testing, launch the `gatling` test by execute following commands in a separate command-shell on your local machine:
 
     ```
     $> cd ~/akka-cqrs-cart-example-load-test/load-testing
@@ -81,3 +85,22 @@ Very simple load test project for driving load to the _**Shopping Cart Service**
     [success] Total time: 12 s, ....
     ```
     Please note that a small % of requests will fail at this time. For example, 10 (2%) out of 480 requests failed in the above load-test run.
+
+## Manage request load in the test
+   The request load in this test is controlled in two dimensions. These dimensions are 'no. of users' and 'time duration', and their values are currently controlled through the following two lines of code in `load-testing/src/test/scala/com/lightbend/akka/samples/load/ShoppingCartServiceLoadTest.scala`:
+
+   ```
+   private val users = System.getProperty("requestsPerSecond", "1").toInt  // # of users
+
+   private val loadDuration: FiniteDuration = (1 * 60).seconds // test duration in seconds
+   ```
+   As shown above, by default the load test is run with one user and for one minute. However, you can control the load by changing the no. of users or the test duration or both.
+   
+   For example, the following shows how you can increase the test load by increasing the no of users to two and increasing the test duration to five minutes:
+   ```
+   private val users = System.getProperty("requestsPerSecond", "2").toInt  // # of users
+
+   private val loadDuration: FiniteDuration = (5 * 60).seconds // test duration in seconds
+   ```
+
+   Please follow all the instructions mentioned in the **_'Running the load test locally'_** section above, starting from instruction #2, after making the required changes in the `ShoppingCartServiceLoadTest.scala`.
