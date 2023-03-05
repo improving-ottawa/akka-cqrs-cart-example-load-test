@@ -19,11 +19,13 @@ class ShoppingCartServiceLoadTest extends Simulation {
 
   println(s"Using $target as target environment for load test")
 
+  val randomPayloadSize = System.getProperty("randomPayloadSize", "50").toInt
+
   val grpcTarget = grpc(managedChannelBuilder(target.host, target.port).usePlaintext())
 
   val tests =
     List(
-      ShoppingCartScenario(grpcTarget)
+      ShoppingCartScenario(grpcTarget, randomPayloadSize)
     )
 
   private val users = System.getProperty("requestsPerSecond", "1").toInt

@@ -39,6 +39,7 @@ message AddItemRequest {
     string cartId = 1;
     string itemId = 2;
     int32 quantity = 3;
+    bytes random_payload = 4;
 }
 
 message UpdateItemRequest {
@@ -46,12 +47,14 @@ message UpdateItemRequest {
     string cartId = 1;
     string itemId = 2;
     int32 quantity = 3;
+    bytes random_payload = 4;
 }
 
 
 message CheckoutRequest {
     option (scalapb.message).extends = "ShoppingCartCommand";
     string cartId = 1;
+    bytes random_payload = 4;
 }
 
 message GetCartRequest {
