@@ -10,6 +10,7 @@ organization := "com.lightbend.akka.samples"
 lazy val loadTesting = project
   .in(file("."))
   .enablePlugins(GatlingPlugin)
+  .enablePlugins(JavaAppPackaging, DockerPlugin)
   .settings(
     scalaVersion := "2.13.10",
     libraryDependencies ++= Seq(
@@ -25,6 +26,10 @@ lazy val loadTesting = project
       "io.gatling" % "gatling-test-framework" % gatling % Test,
       "com.github.phisgr" % "gatling-grpc" % "0.15.1" % Test
     ),
-    name := "load-testing",
+    name := "shopping-cart-load-test-driver",
     libraryDependencies ++= integrationTestDependencies,
+    dockerBaseImage := "docker.io/library/adoptopenjdk:11-jre-hotspot",
+    dockerUsername := sys.props.get("docker.username"),
+    dockerRepository := sys.props.get("docker.registry"),
+    dockerRepository := Some("shopping-cart-load-test"),
   )
