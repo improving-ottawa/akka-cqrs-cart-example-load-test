@@ -32,4 +32,21 @@ lazy val loadTesting = project
     dockerUsername := sys.props.get("docker.username"),
     dockerRepository := sys.props.get("docker.registry"),
     dockerRepository := Some("shopping-cart-load-test"),
+    Docker / packageName := "shopping-cart-load-test-driver",
+    Compile / publishArtifact := false,
+    Gatling / publishArtifact := true,
+    GatlingIt / publishArtifact := false,
+    Universal / mappings ++= {
+      val testJar = (Gatling / packageBin).value
+      val testsJar = (Test / packageBin).value
+      Seq(
+        testJar -> s"lib/${testJar.getName}",
+        testsJar -> s"lib/${testsJar.getName}"
+      )
+    },
+    Test / mainClass := Some("com.lightbend.akka.samples.load.MainLauncher"),
+//    dockerCommands ++= Seq(
+//      // setting the run script executable
+//      com.typesafe.sbt.packager.docker.Cmd("ADD", "./test.sh", "/opt/docker/run.sh")
+//    )
   )
