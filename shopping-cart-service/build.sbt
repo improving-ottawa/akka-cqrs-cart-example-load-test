@@ -1,12 +1,12 @@
 name := "shopping-cart-service"
 
-organization := "com.lightbend.akka.samples"
+ThisBuild / organization := "com.lightbend.akka.samples"
 organizationHomepage := Some(url("https://akka.io"))
 licenses := Seq(("CC0", url("https://creativecommons.org/publicdomain/zero/1.0")))
 
 scalaVersion := "2.13.5"
 
-version := "0.2.0-SNAPSHOT"
+ThisBuild / version := "0.2.0-SNAPSHOT"
 
 Compile / scalacOptions ++= Seq(
   "-target:11",
