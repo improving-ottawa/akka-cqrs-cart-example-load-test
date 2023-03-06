@@ -21,10 +21,11 @@ import org.scalacheck.Gen
  * - adds an item and then adjusts it by a random number of times, repeats until the selected portion of the catalogue has been added
  * - checks out
  */
-class ShoppingCartScenario(catalogue: Catalogue)(protocol: GrpcProtocol) extends GoGoGatling {
+class ShoppingCartScenario(catalogue: Catalogue, randomPayloadBytes: Int)(protocol: GrpcProtocol) extends GoGoGatling {
 
   private val quantityGen = Gen.choose(3, 7000)
   private val numberOfUpdateGen = Gen.choose(5, 10)
+  private val randomPayloadGen = Gen.listOfN(randomPayloadBytes, Gen.hexChar).map(_.map(_.toByte).toArray)
 
   private val scenarioInputGen: Gen[Map[String, Any]] = {
     for {
@@ -46,14 +47,14 @@ class ShoppingCartScenario(catalogue: Catalogue)(protocol: GrpcProtocol) extends
     for {
       cartId <- s("cartId").validate[String]
       itemId <- s("itemId").validate[String]
-    } yield AddItemRequest(cartId, itemId, quantityGen.sample.get)
+    } yield AddItemRequest(cartId, itemId, quantityGen.sample.get, com.google.protobuf.ByteString.copyFrom(randomPayloadGen.sample.get))
   }
 
   private val updateItemRequestExpr: Expression[UpdateItemRequest] = { s =>
     for {
       cartId <- s("cartId").validate[String]
       itemId <- s("itemId").validate[String]
-    } yield UpdateItemRequest(cartId, itemId, quantityGen.sample.get)
+    } yield UpdateItemRequest(cartId, itemId, quantityGen.sample.get, com.google.protobuf.ByteString.copyFrom(randomPayloadGen.sample.get))
   }
 
   val test: ScenarioBuilder =
@@ -92,8 +93,8 @@ class ShoppingCartScenario(catalogue: Catalogue)(protocol: GrpcProtocol) extends
 
 object ShoppingCartScenario {
 
-  def apply(protocol: GrpcProtocol): ShoppingCartScenario =
-    new ShoppingCartScenario(catalogueGen.sample.get)(protocol)
+  def apply(protocol: GrpcProtocol, payloadBytes: Int = 50): ShoppingCartScenario =
+    new ShoppingCartScenario(catalogueGen.sample.get, payloadBytes)(protocol)
 
   val catalogueSizeGen = Gen.choose(50, 200)
 
