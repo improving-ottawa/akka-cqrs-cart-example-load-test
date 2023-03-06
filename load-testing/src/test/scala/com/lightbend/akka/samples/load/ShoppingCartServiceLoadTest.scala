@@ -26,14 +26,14 @@ class ShoppingCartServiceLoadTest extends Simulation {
       ShoppingCartScenario(grpcTarget)
     )
 
-  private val users = System.getProperty("requestsPerSecond", "1").toInt
+  private val users = System.getProperty("requestsPerSecond", "1").toInt  // # of users
 
-  private val loadDuration: FiniteDuration = (1 * 60).seconds // 5 minutes
+  private val loadDuration: FiniteDuration = (1 * 60).seconds // test duration in seconds
 
   println(s"Starting Shopping cart load test at ${users} users per second")
 
-  //val testPlan = tests.flatMap(_.all.map(_.inject(constantUsersPerSec(users).during(loadDuration))))
-  val testPlan = tests.flatMap(_.all.map(_.inject(atOnceUsers(users))))
+  val testPlan = tests.flatMap(_.all.map(_.inject(constantUsersPerSec(users).during(loadDuration))))
+  //val testPlan = tests.flatMap(_.all.map(_.inject(atOnceUsers(users))))
   setUp(
     testPlan
     )
