@@ -1,6 +1,6 @@
 import Dependencies._
 
-val gatling = "3.9.0"
+val gatling = "3.9.2"
 val gatling_grpc = "0.15.1"
 
 name := "shopping-cart-load-test"
@@ -14,6 +14,7 @@ lazy val loadTesting = project
   .settings(
     scalaVersion := "2.13.10",
     libraryDependencies ++= Seq(
+      "com.github.pathikrit" %% "better-files" % "3.9.2",
       "com.fasterxml.jackson.core" % "jackson-databind" % "2.14.1",
       "com.fasterxml.jackson.core" % "jackson-core" % "2.14.1",
       "com.fasterxml.jackson.core" % "jackson-annotations" % "2.14.1",
@@ -22,9 +23,12 @@ lazy val loadTesting = project
       "com.fasterxml.jackson.dataformat" % "jackson-dataformat-cbor" % "2.14.1",
       "com.fasterxml.jackson.datatype" % "jackson-datatype-jdk8" % "2.14.1",
       "com.fasterxml.jackson.datatype" % "jackson-datatype-jsr310" % "2.14.1",
-      "io.gatling.highcharts" % "gatling-charts-highcharts" % gatling % Test,
-      "io.gatling" % "gatling-test-framework" % gatling % Test,
-      "com.github.phisgr" % "gatling-grpc" % "0.15.1" % Test
+      "io.gatling.highcharts" % "gatling-charts-highcharts" % gatling,
+      "io.gatling" % "gatling-test-framework" % gatling,
+      "com.github.phisgr" % "gatling-grpc" % "0.15.1"
+    ),
+    dependencyOverrides ++= Seq(
+      "org.scala-lang.modules" %% "scala-parser-combinators" % "2.1.1"
     ),
     name := "shopping-cart-load-test-driver",
     libraryDependencies ++= integrationTestDependencies,
@@ -32,21 +36,5 @@ lazy val loadTesting = project
     dockerUsername := sys.props.get("docker.username"),
     dockerRepository := sys.props.get("docker.registry"),
     dockerRepository := Some("shopping-cart-load-test"),
-    Docker / packageName := "shopping-cart-load-test-driver",
-    Compile / publishArtifact := false,
-    Gatling / publishArtifact := true,
-    GatlingIt / publishArtifact := false,
-    Universal / mappings ++= {
-      val testJar = (Gatling / packageBin).value
-      val testsJar = (Test / packageBin).value
-      Seq(
-        testJar -> s"lib/${testJar.getName}",
-        testsJar -> s"lib/${testsJar.getName}"
-      )
-    },
-    Test / mainClass := Some("com.lightbend.akka.samples.load.MainLauncher"),
-//    dockerCommands ++= Seq(
-//      // setting the run script executable
-//      com.typesafe.sbt.packager.docker.Cmd("ADD", "./test.sh", "/opt/docker/run.sh")
-//    )
+    Docker / packageName := "shopping-cart-load-test-driver"
   )
