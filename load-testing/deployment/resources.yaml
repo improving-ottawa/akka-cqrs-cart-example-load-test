@@ -37,7 +37,7 @@ spec:
     requests:
       storage: 1Gi
 ---
-# This PV is a common, persistent volume to collect simulation results of load tests across nodes, runs.  
+# This PV is a common, persistent volume to collect simulation results of load tests across nodes, runs.
 apiVersion: v1
 kind: PersistentVolume
 metadata:
@@ -51,5 +51,6 @@ spec:
   accessModes:
     - ReadWriteMany
   hostPath:
+    # TODO:  must be replaced with a cloud resource in a real deployed scenario
     # TODO:  maps to a local directory as demonstration, replace accordingly
     path: "/Users/dkichler/projects/scylla-pov/akka-cqrs-cart-example/load-testing/results"
