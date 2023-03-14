@@ -1,6 +1,3 @@
-/*-------------------------------------
-  Event Sourcing tables
--------------------------------------*/
 CREATE TABLE IF NOT EXISTS cart_service.messages
 (
     persistence_id    text,

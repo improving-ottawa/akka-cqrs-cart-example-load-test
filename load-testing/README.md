@@ -104,3 +104,25 @@ Please use the following instructions to run this load test on your local machin
    ```
 
    Please follow all the instructions mentioned in the **_'Running the load test locally'_** section above, starting from instruction #2, after making the required changes in the `ShoppingCartServiceLoadTest.scala`.
+=======
+```
+$> sbt gatling:test
+```
+
+### Deploying to K8s
+
+The approach is based on the high-level [guidelines here](https://gatling.io/docs/gatling/guides/scaling_out/#scaling-out-with-gatling-open-source)
+
+#### Build docker image
+
+```
+$> sbt clean docker:publishLocal
+```
+
+#### Test docker image
+
+The image will publish it's results to `/mnt/simulation-results/results-<pod-name>` where `<pod-name>` is sourced from environment variable `POD_NAME`.  The command below provides a value `xyz` as POD_NAME.  First create a local directory `result` to mount as a volume in the container, then try the image with this command:
+
+```
+$> docker run -it -v ${PWD}/results:/mnt/simulation-data -e POD_NAME=xyz shopping-cart-load-test/shopping-cart-load-test-driver:0.1.0-SNAPSHOT
+```
