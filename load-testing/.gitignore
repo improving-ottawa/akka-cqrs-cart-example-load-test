@@ -7,7 +7,7 @@ target/
 
 .idea
 *.iml
-
+results/
 .metals
 .bloop
 
