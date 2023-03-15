@@ -51,6 +51,16 @@ https://github.com/improving-ottawa/akka-cqrs-cart-example-load-test/blob/579f42
 The nodes are given fairly modest resource ask & limits, and heapsizes:
 https://github.com/improving-ottawa/akka-cqrs-cart-example-load-test/blob/579f4251773c8c21d874d28794d0e5f9ca104894/shopping-cart-service/deployment/resources.yaml#L84-L89
 
+##### Scaling
+
+The application can be scaled up/down by modifying the number of replicas.  This must be changed in _two_ spots at the _same time_, one controlling how many pods k8s will deploy, the other [configuring Akka cluster how many minimum peers to expect during discovery](https://doc.akka.io/docs/akka-management/current/bootstrap/index.html#initial-deployment) (`contact-point-discovery.required-contact-point-nr`):
+
+`replicas`:
+https://github.com/improving-ottawa/akka-cqrs-cart-example-load-test/blob/579f4251773c8c21d874d28794d0e5f9ca104894/shopping-cart-service/deployment/resources.yaml#L20-L21
+
+controlling `contact-point-discovery.required-contact-point-nr`, configured here in the K8s deployment:
+https://github.com/improving-ottawa/akka-cqrs-cart-example-load-test/blob/579f4251773c8c21d874d28794d0e5f9ca104894/shopping-cart-service/deployment/resources.yaml#L50-L51
+
 
 ### Deploying
 
