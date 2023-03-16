@@ -1,4 +1,4 @@
-package com.lightbend.akka.samples.load
+package load
 
 import io.gatling.app.Gatling
 import io.gatling.core.config.GatlingPropertiesBuilder
@@ -17,3 +17,5 @@ object MainLauncher extends App {
     .resultsDirectory(resultsPath)
   Gatling.fromMap(props.build)
 }
+
+

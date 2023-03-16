@@ -1,4 +1,4 @@
-package com.lightbend.akka.samples.load
+package load
 
 import GoGoGatling.TestVariables
 import io.gatling.core.Predef._

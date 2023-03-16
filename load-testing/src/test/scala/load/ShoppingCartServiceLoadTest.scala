@@ -1,4 +1,4 @@
-package com.lightbend.akka.samples.load
+package load
 
 import ShoppingCartServiceLoadTest.Target
 import com.github.phisgr.gatling.grpc.Predef._
@@ -34,8 +34,8 @@ class ShoppingCartServiceLoadTest extends Simulation {
 
   println(s"Starting Shopping cart load test at ${users} users per second")
 
-  val testPlan = tests.flatMap(_.all.map(_.inject(constantUsersPerSec(users).during(loadDuration))))
-  //val testPlan = tests.flatMap(_.all.map(_.inject(atOnceUsers(users))))
+//  val testPlan = tests.flatMap(_.all.map(_.inject(constantUsersPerSec(users).during(loadDuration))))
+  val testPlan = tests.flatMap(_.all.map(_.inject(atOnceUsers(users))))
   setUp(
     testPlan
     )

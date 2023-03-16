@@ -124,5 +124,6 @@ $> sbt clean docker:publishLocal
 The image will publish it's results to `/mnt/simulation-results/results-<pod-name>` where `<pod-name>` is sourced from environment variable `POD_NAME`.  The command below provides a value `xyz` as POD_NAME.  First create a local directory `result` to mount as a volume in the container, then try the image with this command:
 
 ```
+$> mkdir -p ./results
 $> docker run -it -v ${PWD}/results:/mnt/simulation-data -e POD_NAME=xyz shopping-cart-load-test/shopping-cart-load-test-driver:0.1.0-SNAPSHOT
 ```

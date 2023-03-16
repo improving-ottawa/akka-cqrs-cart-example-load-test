@@ -13,6 +13,9 @@ lazy val loadTesting = project
   .enablePlugins(JavaAppPackaging, DockerPlugin)
   .settings(
     scalaVersion := "2.13.10",
+    // add test scope sources to compile so they get bundled into the docker image for deployment
+    Compile / sources ++= (Test / sources).value,
+    Compile / sourceDirectories ++= (Test / sourceDirectories).value,
     libraryDependencies ++= Seq(
       "com.github.pathikrit" %% "better-files" % "3.9.2",
       "com.fasterxml.jackson.core" % "jackson-databind" % "2.14.1",

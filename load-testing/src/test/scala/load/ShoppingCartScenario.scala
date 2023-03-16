@@ -1,8 +1,8 @@
-package com.lightbend.akka.samples.load
+package load
 
 import com.github.phisgr.gatling.grpc.Predef._
 import com.github.phisgr.gatling.grpc.protocol.GrpcProtocol
-import com.lightbend.akka.samples.load.ShoppingCartScenario.Catalogue
+import ShoppingCartScenario.Catalogue
 import io.gatling.commons.validation.Success
 import shopping.cart.proto.{AddItemRequest, CheckoutRequest, ShoppingCartServiceGrpc, UpdateItemRequest}
 // stringToExpression is hidden because we have $ in GrpcDsl
