@@ -9,19 +9,13 @@ import io.gatling.core.Predef.{stringToExpression => _, _}
 
 class ShoppingCartServiceLoadTest extends Simulation {
 
-  val localTarget = Target("127.0.0.1", 8101)
-  val targetMap = Map(
-    "local" -> localTarget,
-    "dev" -> Target("127.0.0.1", 10110)
-  )
+  val testConfig = TestConfig()
 
-  val target = targetMap.getOrElse(System.getProperty("targetEnvironment", "local"), localTarget)
+  println(s"Using ${testConfig.targetHost}:${testConfig.targetPort} as target environment for load test")
 
-  println(s"Using $target as target environment for load test")
+  val randomPayloadSize = testConfig.randomPayloadSize
 
-  val randomPayloadSize = System.getProperty("randomPayloadSize", "50").toInt
-
-  val grpcTarget = grpc(managedChannelBuilder(target.host, target.port).usePlaintext())
+  val grpcTarget = grpc(managedChannelBuilder(testConfig.targetHost, testConfig.targetPort).usePlaintext())
 
   val tests =
     List(

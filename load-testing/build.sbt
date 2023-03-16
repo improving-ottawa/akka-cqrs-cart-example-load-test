@@ -26,6 +26,7 @@ lazy val loadTesting = project
       "com.fasterxml.jackson.dataformat" % "jackson-dataformat-cbor" % "2.14.1",
       "com.fasterxml.jackson.datatype" % "jackson-datatype-jdk8" % "2.14.1",
       "com.fasterxml.jackson.datatype" % "jackson-datatype-jsr310" % "2.14.1",
+      "com.github.pureconfig" %% "pureconfig" % "0.17.2",
       "io.gatling.highcharts" % "gatling-charts-highcharts" % gatling,
       "io.gatling" % "gatling-test-framework" % gatling,
       "com.github.phisgr" % "gatling-grpc" % "0.15.1"
