@@ -17,6 +17,16 @@ spec:
             - mountPath: "/mnt/simulation-data"
               name: shopping-cart-load-driver-storage
           env:
+            - name: RANDOM_PAYLOAD_SIZE
+              value: "50"  # value in bytes
+            - name: TARGET_HOST
+              value: "shopping-cart-service"  # service hostname exposed by shopping-cart-service
+            - name: TARGET_PORT
+              value: "8101"
+            - name: TEST_DURATION
+              value: "30.seconds"
+            - name: USERS_PER_SECOND
+              value: "1"
             - name: POD_NAME
               valueFrom:
                 fieldRef:

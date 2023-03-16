@@ -16,6 +16,7 @@ lazy val loadTesting = project
     // add test scope sources to compile so they get bundled into the docker image for deployment
     Compile / sources ++= (Test / sources).value,
     Compile / sourceDirectories ++= (Test / sourceDirectories).value,
+    Compile / resources ++= (Test / resources).value,
     libraryDependencies ++= Seq(
       "com.github.pathikrit" %% "better-files" % "3.9.2",
       "com.fasterxml.jackson.core" % "jackson-databind" % "2.14.1",
