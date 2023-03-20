@@ -138,7 +138,7 @@ ssh-keygen -p -N "" -m pem -f ~/.ssh/gcloud-ssh-dse-vms
 
 Edit dse-1, dse-2, and dse-3 nodes (created above) in GCP console
 and, for each
-a.) Allow HTTP and HTTPS traffic in 'firewalls' section AND add dse-ports tag
+a.) Allow HTTP and HTTPS traffic in 'firewalls' section AND add 'dse-ports' tag
 b.) Add contents of 'gcloud-ssh-dse-vms.pub' as another SSH Key for the VM instance
 
 
@@ -185,9 +185,17 @@ echo UUID=`sudo blkid -s UUID -o value /dev/md0` /mnt/disks/cassandra_data ext4 
 
 cat /etc/fstab
 
-Create 'cassandra' user with 'cassandra' password:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Create 'cassandra' User:
+~~~~~~~~~~~~~~~~~~~~~~~~~
 sudo adduser cassandra
+
+NOTE: provide 'cassandra' as password and leave the following at the default empty (just enter on each)
+        Full Name []:
+        Room Number []:
+        Work Phone []:
+        Home Phone []:
+        Other []:
+
 sudo usermod -aG sudo cassandra
 
 
