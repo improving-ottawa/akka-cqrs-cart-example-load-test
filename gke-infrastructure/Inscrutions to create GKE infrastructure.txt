@@ -1,0 +1,188 @@
+
+# -------------------------------------------------------------------------------------
+# STEP 0: Login & Authentication
+# -------------------------------------------------------------------------------------
+
+Authenticate your gcloud SDK from your local machine:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+REF: https://cloud.google.com/artifact-registry/docs/docker/authentication
+
+gcloud auth login
+
+
+Set the right project:
+~~~~~~~~~~~~~~~~~~~~~~~
+gcloud projects list |grep scylla
+gcloud config set project scylla-cassandra-comparison
+
+
+
+# -------------------------------------------------------------------------------------
+# STEP 1: Load image in the container registry
+# -------------------------------------------------------------------------------------
+
+
+List artifact repositories that you have access:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+a.) Visit https://console.cloud.google.com/artifacts?project=scylla-cassandra-comparison
+
+b.)
+gcloud artifacts repositories list
+#
+# Listing items under project scylla-cassandra-comparison, across all locations.
+#
+# ARTIFACT_REGISTRY
+#
+# REPOSITORY: load-test
+# ...
+# ...
+# ...
+#
+
+
+
+To create an Artifactory repository:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+gcloud artifacts repositories create load-test --repository-format=docker \
+--location=northamerica-northeast2 --description="To store scylla vs cassandra load-test related images"
+
+REF: https://cloud.google.com/artifact-registry/docs/docker/store-docker-container-images#create
+
+
+
+Configure your Artifact Registry credentials for use with Docker directly in gcloud:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+REF: https://cloud.google.com/artifact-registry/docs/docker/authentication
+
+gcloud auth configure-docker northamerica-northeast2-docker.pkg.dev
+gcloud artifacts locations list
+cat ~/.docker/config.json
+
+
+
+Create and publish 'shopping-cart-service' image to GCP artifact repository:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+cd ~/Work/akka-cqrs-cart-example-load-test/shopping-cart-service
+
+sbt clean compile
+
+sbt clean docker:publishLocal
+
+docker tag shopping-cart-load-test/shopping-cart-service:0.2.0-SNAPSHOT \
+northamerica-northeast2-docker.pkg.dev/scylla-cassandra-comparison/load-test/shopping-cart-service:0.2.0-SNAPSHOT
+
+docker push northamerica-northeast2-docker.pkg.dev/scylla-cassandra-comparison/load-test/shopping-cart-service:0.2.0-SNAPSHOT
+
+
+
+# -------------------------------------------------------------------------------------
+# SETP-2 Kubernetes deployment
+# -------------------------------------------------------------------------------------
+
+Enable 'Kubernetes Engine API' in your project by visiting 'Enable access to API' section of GCP website for your project.
+
+
+
+If it does not exists, then Create a Kubernetes Cluster:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Once created, you can access this cluster by visiting:
+https://console.cloud.google.com/kubernetes/list/overview?project=scylla-cassandra-comparison
+(in console.cloud.google.com)
+
+
+OPTION-1
+---------
+From 'Create cluster' dialog select <CONFIGURE> for 'Standard: You manage your cluster' option.
+
+Next, on 'Cluster basics' page:
+
+NAME: load-test
+LOCATION TYPE: Zonal
+ZONE: northamerica-northeast2-a
+CONTROL PLANE VERSION: Release channel (AND accept defaults for 'Release channel' and 'Version' dropdowns)
+
+Hit  ... <CREATE> ...
+
+
+OPTION-2:
+----------
+gcloud beta container --project "scylla-cassandra-comparison" clusters create "load-test" --no-enable-basic-auth --cluster-version "1.24.9-gke.3200" --release-channel "regular" --machine-type "e2-medium" --image-type "COS_CONTAINERD" --disk-type "pd-balanced" --disk-size "100" --metadata disable-legacy-endpoints=true --scopes "https://www.googleapis.com/auth/devstorage.read_only","https://www.googleapis.com/auth/logging.write","https://www.googleapis.com/auth/monitoring","https://www.googleapis.com/auth/servicecontrol","https://www.googleapis.com/auth/service.management.readonly","https://www.googleapis.com/auth/trace.append" --num-nodes "3" --logging=SYSTEM,WORKLOAD --monitoring=SYSTEM --enable-ip-alias --network "projects/scylla-cassandra-comparison/global/networks/default" --subnetwork "projects/scylla-cassandra-comparison/regions/northamerica-northeast2/subnetworks/default" --no-enable-intra-node-visibility --default-max-pods-per-node "110" --no-enable-master-authorized-networks --addons HorizontalPodAutoscaling,HttpLoadBalancing,GcePersistentDiskCsiDriver --enable-autoupgrade --enable-autorepair --max-surge-upgrade 1 --max-unavailable-upgrade 0 --enable-shielded-nodes --node-locations "northamerica-northeast2-a"
+
+
+
+Configure 'kubectl'  to work with GKE cluster in your project:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+REF: https://cloud.google.com/kubernetes-engine/docs/how-to/cluster-access-for-kubectl
+
+gcloud components update
+
+# Install KUBECTL if it is not already installed
+gcloud components install kubectl
+kubectl version --short
+
+# Install KUBECTl plugin for GKE, if not already installed
+gcloud components install gke-gcloud-auth-plugin
+gke-gcloud-auth-plugin --version
+
+
+# Fetch GKE cluster credentials
+gcloud container clusters get-credentials load-test \
+    --zone=northamerica-northeast2-a
+
+
+
+kubectl config view
+kubectl cluster-info
+
+kubectl config current-context
+# should return something like: gke_scylla-cassandra-comparison_northamerica-northeast2-a_load-test
+
+
+
+OPTIONAL: Deploy the container based on image from Artifactory:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+REF: https://cloud.google.com/artifact-registry/docs/integrate-gke#gcloud
+TEMPLATE: kubectl run [NAME] --image=LOCATION-docker.pkg.dev/PROJECT-ID/REPOSITORY/IMAGE:TAG
+
+kubectl run shopping-cart-service --image=northamerica-northeast2-docker.pkg.dev/scylla-cassandra-comparison/load-test/shopping-cart-service:0.2.0-SNAPSHOT
+
+
+
+Deploy shopping-cart-service:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+kubectl apply -f deployment/resources.yaml
+
+kubectl get services
+
+
+Define Load Balancer service for shopping-cart-service :
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# FIRST, create 'service.yaml' with following contents at same location as that of 'resources.yaml':
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: shopping-cart-service
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 8101
+      targetPort: 8101
+  selector:
+    app: shopping-cart-service
+
+
+# THEN execute following command:
+kubectl apply -f deployment/service.yaml
+
+
+Configure Port Forwarding for 'shopping-cart-service':
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+kubectl port-forward service/shopping-cart-service 8101:8101
+
+
+Send GRPc requests for basic testing:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+grpcurl -d '{"cartId":"cart1", "itemId":"socks", "quantity":3}' -plaintext 34.124.124.145:8101 shoppingcart.ShoppingCartService.AddItem
