@@ -27,6 +27,8 @@ spec:
               value: "30.seconds"
             - name: USERS_PER_SECOND
               value: "1"
+            - name: RESULT_BASE_DIR
+              value: "/mnt/simulation-data" # should pick/set a more appropriate mount path
             - name: POD_NAME
               valueFrom:
                 fieldRef:
