@@ -74,7 +74,6 @@ northamerica-northeast2-docker.pkg.dev/scylla-cassandra-comparison/load-test/sho
 docker push northamerica-northeast2-docker.pkg.dev/scylla-cassandra-comparison/load-test/shopping-cart-service:0.2.0-SNAPSHOT
 
 
-
 # -------------------------------------------------------------------------------------
 # SETP-2 Kubernetes deployment
 # -------------------------------------------------------------------------------------
@@ -155,9 +154,20 @@ kubectl apply -f deployment/resources.yaml
 kubectl get services
 
 
+
+
+
+Configure Port Forwarding for 'shopping-cart-service':
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# TODO: Not yet working, as a result we have to use the following Load Balancer service for end-to-end smog-testing the 'shopping-cart-service'
+
+kubectl port-forward service/shopping-cart-service 8101:8101
+
+
+
 Define Load Balancer service for shopping-cart-service :
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
+REF: https://medium.com/google-cloud/deploying-service-or-ingress-on-gke-59a49b134e3b
 # FIRST, create 'service.yaml' with following contents at same location as that of 'resources.yaml':
 
 ---
@@ -178,11 +188,107 @@ spec:
 kubectl apply -f deployment/service.yaml
 
 
-Configure Port Forwarding for 'shopping-cart-service':
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-kubectl port-forward service/shopping-cart-service 8101:8101
 
 
 Send GRPc requests for basic testing:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# NOTE: 34.124.124.145 is the IP address of the external load-balancer service.
 grpcurl -d '{"cartId":"cart1", "itemId":"socks", "quantity":3}' -plaintext 34.124.124.145:8101 shoppingcart.ShoppingCartService.AddItem
+
+
+
+# -------------------------------------------------------------------------------------
+# SETP-3 load-test application deployment
+# -------------------------------------------------------------------------------------
+
+Create and publish 'shopping-cart-load-test-driver' image to GCP artifact repository:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+cd ~/Work/akka-cqrs-cart-example-load-test/load-testing
+
+sbt clean compile
+
+sbt clean docker:publishLocal
+
+docker tag shopping-cart-load-test/shopping-cart-load-test-driver:0.2.0-SNAPSHOT \
+northamerica-northeast2-docker.pkg.dev/scylla-cassandra-comparison/load-test/shopping-cart-load-test-driver:0.2.0-SNAPSHOT
+
+docker push northamerica-northeast2-docker.pkg.dev/scylla-cassandra-comparison/load-test/shopping-cart-load-test-driver:0.2.0-SNAPSHOT
+
+
+Enablethe Filestore CSI driver on an existing cluster:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+'shopping-cart-load-driver' will launch multiple nodes, where each of these nodes will create a directory in the shared PVC provisioned through PersistentVolumeClaim. This means that we have to create the PersistentVolumeClaim with 'ReadWriteMany' accessMode.
+
+In order to provision a 'ReadWriteMany' accessMode for PersistentVolumeClaim we need to enable 'Filestore' backed Persistent Volume.
+
+To create 'Filestore' backed Persistent Volume we need to install the FileStoreCsiDriver in our cluster.
+
+REFs:
+https://www.opcito.com/blogs/introduction-to-persistent-volumes-and-mounting-gcp-buckets-on-containers
+https://devopscube.com/persistent-volume-google-kubernetes-engine/
+https://cloud.google.com/filestore/docs/csi-driver#existing
+
+# Enable the Filestore CSI driver in 'load-test' cluster
+gcloud container clusters update load-test \
+   --update-addons=GcpFilestoreCsiDriver=ENABLED \
+   --zone=northamerica-northeast2-a
+
+
+# To see the list of installed storage classes in your cluster
+kubectl get sc
+
+# Two of these types are:
+# standard-rwx, using the Basic HDD Filestore service tier.
+# premium-rwx, using the Basic SSD Filestore service tier.
+# Please see https://cloud.google.com/filestore/docs/service-tiers#basic_hdd_and_basic_ssd_tiers for further details
+#
+# NOTE: In order to avoid the slow result writing coming in our way of performance test, We should use 'premium-rwx' storage class to run our load-tests.
+
+
+Enable Cloud Filestore API:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In GCP console under API & Services -> select 'Enable APIs & services' -> Cloud Filestore API
+
+
+
+Deploy shopping-cart-load-driver job:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+cd ~/Work/akka-cqrs-cart-example-load-test/load-testing
+
+kubectl apply -f deployment/resources.yaml
+
+kubectl get services
+
+
+
+# -------------------------------------------------------------------------------------
+# SETP-4 Miscellaneous commands
+# -------------------------------------------------------------------------------------
+
+To see details about created Persistent Volume (PV)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+kubectl get pvc -o wide
+kubectl get pv pvc-a3d96baf-0d71-4877-b7bc-01d7a6f43b6b -o yaml > ~/Downloads/shopping-cart-load-driver_PV.yaml
+
+
+
+To see details about created Persistent Volume Claim (PVC)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+kubectl get pvc shopping-cart-load-driver-pvc -o jsonpath='{.metadata.namespace}'
+
+# Or see the entire yaml
+kubectl get pvc shopping-cart-load-driver-pvc -o yaml
+
+
+
+
+
+# -------------------------------------------------------------------------------------
+# SETP-5 TEMPORARY implementation using instructions @
+# https://medium.com/@Sushil_Kumar/readwritemany-persistent-volumes-in-google-kubernetes-engine-a0b93e203180
+# -------------------------------------------------------------------------------------
+
+gcloud compute disks create --size=10GB --zone=northamerica-northeast2-a nfs-disk
+
+
+kubectl create -f deployment/nfs/nfs-server-deployment.yaml

@@ -1,0 +1,11 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: shopping-cart-load-driver-pvc
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: filestore-example
+  resources:
+    requests:
+      storage: 1Ti

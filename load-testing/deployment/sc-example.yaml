@@ -1,0 +1,15 @@
+---
+# This PV is a common, persistent volume to collect simulation results of load tests across nodes, runs.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: shopping-cart-load-driver-pv
+provisioner: filestore.csi.storage.gke.io
+volumeBindingMode: Immediate
+allowVolumeExpansion: true
+parameters:
+  tier: standard
+  network: default
+#
+# NOTE:
+# By default, volumes are generally created round-robin-ed across all active zones where Kubernetes cluster has a node.

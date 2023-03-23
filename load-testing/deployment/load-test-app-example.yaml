@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-application-deployment
+  labels:
+    app: shopping-cart-load-driver
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: shopping-cart-load-driver
+  template:
+    metadata:
+      labels:
+        app: shopping-cart-load-driver
+    spec:
+      volumes:
+        - name: shopping-cart-load-driver-storage
+          persistentVolumeClaim:
+            claimName: shopping-cart-load-driver-pvc
+      containers:
+        - name: shopping-cart-load-driver
+          image: northamerica-northeast2-docker.pkg.dev/scylla-cassandra-comparison/load-test/shopping-cart-load-test-driver:0.1.0-SNAPSHOT
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - name: shopping-cart-load-driver-storage
+              mountPath: /mnt/simulation-data # the shared directory
+              
+          env:
+            - name: RANDOM_PAYLOAD_SIZE
+              value: "50"  # value in bytes
+            - name: TARGET_HOST
+              value: "shopping-cart-service"  # service hostname exposed by shopping-cart-service
+            - name: TARGET_PORT
+              value: "8101"
+            - name: TEST_DURATION
+              value: "30.seconds"
+            - name: USERS_PER_SECOND
+              value: "1"
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+      restartPolicy: Always

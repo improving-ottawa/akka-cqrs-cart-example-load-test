@@ -7,6 +7,8 @@ name := "shopping-cart-load-test"
 
 organization := "com.lightbend.akka.samples"
 
+ThisBuild / version := "0.2.0-SNAPSHOT"
+
 lazy val loadTesting = project
   .in(file("."))
   .enablePlugins(GatlingPlugin)

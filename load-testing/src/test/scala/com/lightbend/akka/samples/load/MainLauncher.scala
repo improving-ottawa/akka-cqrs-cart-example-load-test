@@ -7,9 +7,9 @@ import java.time.Instant
 import better.files._
 
 object MainLauncher extends App {
-  val resultsDirBase = sys.env.getOrElse("RESULT_BASE_DIR", "/mnt/simulation-data")
+  val resultsDirBase = sys.env.getOrElse("RESULT_BASE_DIR", "/")
   val pod = sys.env.getOrElse("POD_NAME", Instant.now().toEpochMilli.toString)
-  val resultsPath = s"$resultsDirBase/results-$pod"
+  val resultsPath = s"$resultsDirBase" + s"results-$pod"
   resultsPath.toFile.createDirectoryIfNotExists()
   val props = new GatlingPropertiesBuilder()
     .simulationClass(new ShoppingCartServiceLoadTest().getClass.getName)
