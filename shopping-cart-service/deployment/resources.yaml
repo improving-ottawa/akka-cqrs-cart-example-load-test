@@ -34,7 +34,7 @@ spec:
     spec:
       containers:
         - name: shopping-cart-service
-          image: northamerica-northeast2-docker.pkg.dev/scylla-cassandra-comparison/load-test/shopping-cart-service:0.2.0-SNAPSHOT
+          image: shopping-cart-load-test/shopping-cart-service:0.1.0-SNAPSHOT
           imagePullPolicy: IfNotPresent
           #args: ["-XX:+HeapDumpOnOutOfMemoryError", "-XX:HeapDumpPath=/mnt/heapdumps/$(POD_NAME).hprof"]
           env:
@@ -51,9 +51,9 @@ spec:
               value: "3"
             # currently configured to point at cassandra-1 'example' cluster (found in cassandra.yaml)
             - name: CASSANDRA_SEED_NODE
-              value: "34.130.209.79:9042"
+              value: "cassandra-1.cassandra-single:9042"
             - name: CASSANDRA_LOCAL_DATACENTER
-              value: "improving"
+              value: "datacenter1"
             - name: AKKA_CLUSTER_BOOTSTRAP_SERVICE_NAME
               valueFrom:
                 fieldRef:

@@ -22,9 +22,9 @@ class ShoppingCartServiceLoadTest extends Simulation {
       ShoppingCartScenario(grpcTarget, randomPayloadSize)
     )
 
-  private val users = System.getProperty("requestsPerSecond", "5").toInt  // # of users
+  private val users = System.getProperty("requestsPerSecond", "1").toInt  // # of users
 
-  private val loadDuration: FiniteDuration = (2 * 60).seconds // test duration in seconds
+  private val loadDuration: FiniteDuration = (1 * 60).seconds // test duration in seconds
 
   println(s"Starting Shopping cart load test at ${users} users per second")
 

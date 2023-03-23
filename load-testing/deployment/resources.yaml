@@ -6,16 +6,16 @@ spec:
   template:
     spec:
       volumes:
-        - name: shopping-cart-load-driver-pvc
+        - name: shopping-cart-load-driver-storage
           persistentVolumeClaim:
             claimName: shopping-cart-load-driver-pvc
       containers:
         - name: shopping-cart-load-driver
-          image: northamerica-northeast2-docker.pkg.dev/scylla-cassandra-comparison/load-test/shopping-cart-load-test-driver:0.2.0-SNAPSHOT
-          imagePullPolicy: Always
+          image: shopping-cart-load-test/shopping-cart-load-test-driver:0.1.0-SNAPSHOT
+          imagePullPolicy: IfNotPresent
           volumeMounts:
-            - mountPath: "/"
-              name: shopping-cart-load-driver-pvc
+            - mountPath: "/mnt/simulation-data"
+              name: shopping-cart-load-driver-storage
           env:
             - name: RANDOM_PAYLOAD_SIZE
               value: "50"  # value in bytes
@@ -28,13 +28,13 @@ spec:
             - name: USERS_PER_SECOND
               value: "1"
             - name: RESULT_BASE_DIR
-              value: "/" # should pick/set a more appropriate mount path
+              value: "/mnt/simulation-data" # should pick/set a more appropriate mount path
             - name: POD_NAME
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
       restartPolicy: Never
-  backoffLimit: 2
+  backoffLimit: 4
   completions: 1
 ---
 apiVersion: v1
@@ -42,23 +42,27 @@ kind: PersistentVolumeClaim
 metadata:
   name: shopping-cart-load-driver-pvc
 spec:
-  storageClassName: shopping-cart-load-driver-pv
+  storageClassName: manual
   accessModes:
     - ReadWriteMany
   resources:
     requests:
-      storage: 50Gi
+      storage: 1Gi
 ---
 # This PV is a common, persistent volume to collect simulation results of load tests across nodes, runs.
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
+apiVersion: v1
+kind: PersistentVolume
 metadata:
   name: shopping-cart-load-driver-pv
-provisioner: kubernetes.io/gce-pd
-volumeBindingMode: WaitForFirstConsumer # Immediate
-allowVolumeExpansion: true
-reclaimPolicy: Delete
-parameters:
-  type: premium-rwx
-  fstype: ext4
-  replication-type: none
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    # TODO:  must be replaced with a cloud resource in a real deployed scenario
+    # TODO:  maps to a local directory as demonstration, replace accordingly
+    path: "/Users/dkichler/projects/scylla-pov/akka-cqrs-cart-example/load-testing/results"
