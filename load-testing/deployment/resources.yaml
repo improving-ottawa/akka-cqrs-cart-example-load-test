@@ -5,17 +5,20 @@ metadata:
 spec:
   template:
     spec:
+      securityContext:
+        runAsUser: 0
+        runAsGroup: 0
       volumes:
-        - name: shopping-cart-load-driver-storage
+        - name: shopping-cart-load-driver-pvc
           persistentVolumeClaim:
             claimName: shopping-cart-load-driver-pvc
       containers:
         - name: shopping-cart-load-driver
           image: shopping-cart-load-test/shopping-cart-load-test-driver:0.1.0-SNAPSHOT
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           volumeMounts:
             - mountPath: "/mnt/simulation-data"
-              name: shopping-cart-load-driver-storage
+              name: shopping-cart-load-driver-pvc
           env:
             - name: RANDOM_PAYLOAD_SIZE
               value: "50"  # value in bytes
@@ -42,27 +45,21 @@ kind: PersistentVolumeClaim
 metadata:
   name: shopping-cart-load-driver-pvc
 spec:
-  storageClassName: manual
   accessModes:
     - ReadWriteMany
+  storageClassName: shopping-cart-load-driver-pv
   resources:
     requests:
-      storage: 1Gi
+      storage: 1Ti
 ---
 # This PV is a common, persistent volume to collect simulation results of load tests across nodes, runs.
-apiVersion: v1
-kind: PersistentVolume
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
 metadata:
   name: shopping-cart-load-driver-pv
-  labels:
-    type: local
-spec:
-  storageClassName: manual
-  capacity:
-    storage: 5Gi
-  accessModes:
-    - ReadWriteMany
-  hostPath:
-    # TODO:  must be replaced with a cloud resource in a real deployed scenario
-    # TODO:  maps to a local directory as demonstration, replace accordingly
-    path: "/Users/dkichler/projects/scylla-pov/akka-cqrs-cart-example/load-testing/results"
+provisioner: filestore.csi.storage.gke.io
+volumeBindingMode: Immediate
+allowVolumeExpansion: true
+parameters:
+  tier: standard
+  network: default
