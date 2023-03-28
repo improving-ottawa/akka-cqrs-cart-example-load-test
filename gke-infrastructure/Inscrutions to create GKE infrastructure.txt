@@ -1,4 +1,6 @@
 
+https://cloud.google.com/kubernetes-engine/docs/tutorials/stateful-workload#new-instance
+
 # -------------------------------------------------------------------------------------
 # STEP 0: Login & Authentication
 # -------------------------------------------------------------------------------------
@@ -193,7 +195,7 @@ kubectl apply -f deployment/service.yaml
 Send GRPc requests for basic testing:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # NOTE: 34.124.124.145 is the IP address of the external load-balancer service.
-grpcurl -d '{"cartId":"cart1", "itemId":"socks", "quantity":3}' -plaintext 34.124.124.145:8101 shoppingcart.ShoppingCartService.AddItem
+grpcurl -d '{"cartId":"cart1", "itemId":"socks", "quantity":3}' -plaintext 34.130.19.213:8101 shoppingcart.ShoppingCartService.AddItem
 
 
 
@@ -279,8 +281,17 @@ kubectl get pvc shopping-cart-load-driver-pvc -o jsonpath='{.metadata.namespace}
 # Or see the entire yaml
 kubectl get pvc shopping-cart-load-driver-pvc -o yaml
 
+To get to know the different options that kubernetes has to create a persintent volume:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+kubectl get storageclass
+kubectl describe storageclass
 
 
+To get terminal access to the running POD:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+kubectl exec --stdin --tty test-application-deployment-7f446895b9-6xmn6 -- /bin/bash
+
+kubectl cp shopping-cart-load-driver-h7j4c:/mnt/results-shopping-cart-load-driver-h7j4c/shoppingcartserviceloadtest-20230327193404795/simulation.log ~/Work/Scylla_Cassandra
 
 
 # -------------------------------------------------------------------------------------
