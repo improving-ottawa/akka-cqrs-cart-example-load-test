@@ -199,6 +199,7 @@ grpcurl -d '{"cartId":"cart1", "itemId":"socks", "quantity":3}' -plaintext 34.13
 
 
 
+
 # -------------------------------------------------------------------------------------
 # SETP-3 load-test application deployment
 # -------------------------------------------------------------------------------------
@@ -217,7 +218,7 @@ northamerica-northeast2-docker.pkg.dev/scylla-cassandra-comparison/load-test/sho
 docker push northamerica-northeast2-docker.pkg.dev/scylla-cassandra-comparison/load-test/shopping-cart-load-test-driver:0.2.0-SNAPSHOT
 
 
-Enablethe Filestore CSI driver on an existing cluster:
+Enable the Filestore CSI driver on an existing cluster:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 'shopping-cart-load-driver' will launch multiple nodes, where each of these nodes will create a directory in the shared PVC provisioned through PersistentVolumeClaim. This means that we have to create the PersistentVolumeClaim with 'ReadWriteMany' accessMode.
 
@@ -226,6 +227,7 @@ In order to provision a 'ReadWriteMany' accessMode for PersistentVolumeClaim we 
 To create 'Filestore' backed Persistent Volume we need to install the FileStoreCsiDriver in our cluster.
 
 REFs:
+https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/filestore-csi-driver
 https://www.opcito.com/blogs/introduction-to-persistent-volumes-and-mounting-gcp-buckets-on-containers
 https://devopscube.com/persistent-volume-google-kubernetes-engine/
 https://cloud.google.com/filestore/docs/csi-driver#existing
@@ -252,6 +254,17 @@ Enable Cloud Filestore API:
 In GCP console under API & Services -> select 'Enable APIs & services' -> Cloud Filestore API
 
 
+Configure a Security Context for a Pod or Container:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
+
+
+Persistent Volumes - General information:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+https://kubernetes.io/docs/concepts/storage/persistent-volumes/#access-modes
+https://kubernetes.io/docs/concepts/storage/persistent-volumes/#mount-options
+
+
 
 Deploy shopping-cart-load-driver job:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -263,15 +276,41 @@ kubectl get services
 
 
 
+
+# --------------------------------------------------------------------------------------
+# SETP-4 Deploy Ubuntu POD to access PVC (after load-test application run to completion)
+# --------------------------------------------------------------------------------------
+docker pull ubuntu:20.04
+
+docker tag ubuntu:20.04 \
+  northamerica-northeast2-docker.pkg.dev/scylla-cassandra-comparison/load-test/ubuntu:20.04
+
+docker push northamerica-northeast2-docker.pkg.dev/scylla-cassandra-comparison/load-test/ubuntu:20.04
+
+kubectl apply -f deployment/results-pod.yaml
+
+kubectl get pods
+kubectl exec --stdin --tty results -- /bin/bash
+
+kubectl delete pod results
+
+
+
+
 # -------------------------------------------------------------------------------------
-# SETP-4 Miscellaneous commands
+# SETP-5 Miscellaneous commands
 # -------------------------------------------------------------------------------------
+
+
+To export configurations for all assets within the specified GCP project, organization, or folder:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+https://cloud.google.com/sdk/gcloud/reference/beta/resource-config/bulk-export
+
 
 To see details about created Persistent Volume (PV)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 kubectl get pvc -o wide
 kubectl get pv pvc-a3d96baf-0d71-4877-b7bc-01d7a6f43b6b -o yaml > ~/Downloads/shopping-cart-load-driver_PV.yaml
-
 
 
 To see details about created Persistent Volume Claim (PVC)
@@ -287,19 +326,10 @@ kubectl get storageclass
 kubectl describe storageclass
 
 
-To get terminal access to the running POD:
+To get terminal access to the running load-test POD:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-kubectl exec --stdin --tty test-application-deployment-7f446895b9-6xmn6 -- /bin/bash
+kubectl get pods
 
-kubectl cp shopping-cart-load-driver-h7j4c:/mnt/results-shopping-cart-load-driver-h7j4c/shoppingcartserviceloadtest-20230327193404795/simulation.log ~/Work/Scylla_Cassandra
+kubectl exec --stdin --tty shopping-cart-load-driver-w8b6m -- /bin/bash
 
-
-# -------------------------------------------------------------------------------------
-# SETP-5 TEMPORARY implementation using instructions @
-# https://medium.com/@Sushil_Kumar/readwritemany-persistent-volumes-in-google-kubernetes-engine-a0b93e203180
-# -------------------------------------------------------------------------------------
-
-gcloud compute disks create --size=10GB --zone=northamerica-northeast2-a nfs-disk
-
-
-kubectl create -f deployment/nfs/nfs-server-deployment.yaml
+kubectl cp shopping-cart-load-driver-w8b6m:/mnt/simulation-data/results-shopping-cart-load-driver-w8b6m/shoppingcartserviceloadtest-20230328001857874/simulation.log ~/Work/Scylla_Cassandra
