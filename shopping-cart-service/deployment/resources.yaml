@@ -43,8 +43,8 @@ spec:
                 -Dconfig.resource=deployed.conf
                 -XX:+UseG1GC
                 -XX:+UseStringDeduplication
-                -Xmx1000m
-                -Xms1000m
+                -Xmx1500m
+                -Xms1500m
                 -XX:+PrintFlagsFinal
             # this value should stay the same as number of replicas
             - name: REQUIRED_CONTACT_POINT_NR
