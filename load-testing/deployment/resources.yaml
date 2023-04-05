@@ -15,6 +15,7 @@ spec:
       containers:
         - name: shopping-cart-load-driver
           image: shopping-cart-load-test/shopping-cart-load-test-driver:0.1.0-SNAPSHOT
+          image: northamerica-northeast2-docker.pkg.dev/scylla-cassandra-comparison/load-test/shopping-cart-load-test-driver:0.2.0-SNAPSHOT
           imagePullPolicy: Always
           volumeMounts:
             - mountPath: "/mnt/simulation-data"
