@@ -367,31 +367,9 @@ SELECT 'Install' from  '...' menu (next to dse-1 in Nodes list 'Lifecycle Manage
 
 
 
-Check directories after deployment
+Check directories after deployment:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 cat /etc/dse/cassandra/cassandra.yaml |grep director
 
-To find out deployed Linux OS and Version for ScyllaDB nodes
+To find out deployed Linux OS and Version for DSE nodes
 $> cat /etc/os-release
-
-
-To download a open-source Cassandra distribution
-$> wget https://dlcdn.apache.org/cassandra/4.1.0/apache-cassandra-4.1.0-bin.tar.gz
-
-
-To expand unzip the distribution to the folder
-$> tar -xzf apache-cassandra-4.1.0-bin.tar.gz
-
--- NOTE: the above will create a 'apache-cassandra-4.1.0' folder in the current directory
-
-
-
-Make the following changes to '~/apache-cassandra-4.1.0/conf/cassandra.yaml' file:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-cluster_name: 'Cassandra'
-
-
-
-Visit URL:
-https://console.cloud.google.com/marketplace/details/click-to-deploy-images/cassandra?project=scylla-cassandra-comparison
