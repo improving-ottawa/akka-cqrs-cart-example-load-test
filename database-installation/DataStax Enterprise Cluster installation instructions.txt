@@ -61,7 +61,6 @@ STATUS: READY
 ... ... ...
 ... ... ...
 
-melissa.herrera@datastax.com
 
 -------------------------------------------------------------------------------------
 -- STEP-1: Deploy DSE OpsCenter in GCP
@@ -111,10 +110,62 @@ gcloud compute instances create dse-2 --image ubuntu-2004-focal-v20230302 --imag
 gcloud compute instances create dse-3 --image ubuntu-2004-focal-v20230302 --image-project ubuntu-os-cloud --local-ssd interface=nvme --local-ssd interface=nvme --local-ssd interface=nvme --local-ssd interface=nvme --machine-type=n2-highmem-4 --zone=northamerica-northeast2-a
 
 
-List attached NVMe disk drives :
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-SSH into each of the above 3 VMs to ensure each one has 4 NVMe SSD of 375GB each mounted
+Configure the VMs for SSH connection:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# If not already done, Generate SSH keys on your local machine:
+ssh-keygen -t rsa -f ~/.ssh/gcloud-ssh-dse-vms -C syed.junaid@yoppworks.com
+ssh-keygen -p -N "" -m pem -f ~/.ssh/gcloud-ssh-dse-vms
 
+# Transfer Public Key to the VM instance(s) once they are created:
+# Print public key
+$> cat ~/.ssh/gcloud-ssh-dse-vms.pub
+
+# <Edit> your VM instance in Google Cloud console and select <ADD ITEM> under 'SSH Keys', and copy your Public Key (from previous step) there.
+
+
+Create 'VPC Firewall rules' for DSE cluster:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Description:  dse
+Network: default
+Direction: ingress
+
+Targets: Specified target tags
+
+Target tags: dse-ports
+
+Source filter: IPv4 ranges
+
+# NOTE: beside the first '0.0.0.0/0' the following one to two range values will depend
+#       on Public IP addresses of your cluster nodes.
+#       (Please enhance this description if you know better)
+Source IPv4 ranges: 0.0.0.0/0, 34.124.0.0/24, 34.130.0.0/24
+
+# NOTE: The better choice may be 'Specified protocols and ports' with TCP protocol
+#       and
+#           9042,9142,7000,7001,7199,10000,9180,9100,9160,19042,19142
+#       ports,
+#       for the following option.
+#       However, I was facing a connectivity issue, and selecting 'Allow all' resolved it for me.
+Protocols and Ports: 'Allow all'
+
+
+Configure firewall rules for DSE cluster nodes:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Edit dse-1, dse-2, and dse-3 nodes (created above) in GCP console,
+# and, for each:
+Allow HTTP and HTTPS traffic in 'firewalls' section AND add 'dse-ports' tag
+
+
+Connect to each of the GCP VM instances via SSH from local machine terminal:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# SSH into each of the above 3 VMs to ensure each one has 4 NVMe SSD of 375GB each mounted
+# ssh -i ~/.ssh/gcloud-ssh-dse-vms your-gcloud-user-id@vm-public-ip
+# For example:
+$> ssh -i ~/.ssh/gcloud-ssh-dse-vms syed.junaid@34.130.37.68
+
+
+List attached NVMe disk drives :
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 $> lsblk
 
 Should have similar to the following as part of the Output
@@ -128,33 +179,13 @@ nvme0n4 259:3    0   375G  0 disk
 ... ... ...
 
 
-Configure the VMs for SSH connection:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Generate SSH keys on your local machine:
-ssh-keygen -t rsa -f ~/.ssh/gcloud-ssh-dse-vms -C syed.junaid@yoppworks.com
-ssh-keygen -p -N "" -m pem -f ~/.ssh/gcloud-ssh-dse-vms
-
-
-Edit dse-1, dse-2, and dse-3 nodes (created above) in GCP console
-and, for each
-a.) Allow HTTP and HTTPS traffic in 'firewalls' section AND add 'dse-ports' tag
-b.) Add contents of 'gcloud-ssh-dse-vms.pub' as another SSH Key for the VM instance
-
-
-Connect to each of the GCP VM instances via SSH from local machine terminal:
-For example,
-$> ssh -i ~/.ssh/gcloud-ssh-dse-vms syed.junaid@34.130.185.204
-here 34.130.185.204 is the IP address of the dse-x node we are trying to connect.
-
-
 Install Open JDK 8 on each of the 3 dse-x nodes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 REF: https://docs.datastax.com/en/jdk-install/doc/jdk-install/installOpenJdkDeb.html
 
 sudo apt-get update
 sudo apt-get install openjdk-8-jdk
-
+java -version
 
 Create RAID0 from attached NVMe disks:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -169,7 +200,7 @@ sudo mdadm --create /dev/md0 --level=0 --raid-devices=4 \
  /dev/disk/by-id/google-local-nvme-ssd-0 \
  /dev/disk/by-id/google-local-nvme-ssd-1 \
  /dev/disk/by-id/google-local-nvme-ssd-2 \
- /dev/disk/by-id/google-local-nvme-ssd-3 \
+ /dev/disk/by-id/google-local-nvme-ssd-3
 
 sudo mdadm --detail --prefer=by-id /dev/md0
 
@@ -244,9 +275,25 @@ c.) enter 'syed.junaid' in the Login User box
 d.) Select 'SUDO' as 'Escalation Privileges' choice and leave the 'SUDO to this user' & 'SUDO password' boxes empty
 
 
-Configure data directories for Cassandra.YAML configuration in Lifecycle Manager (one time):
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Go into 'Configuration Profiles' in Lifecycle Manager and assign directories for following properties as shown below:
+Configure 'Config Profiles' section (one time):
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Go to 'Config Profiles' section and assign values for the following properties, as shown below:
+
+Name: test
+DataStax Enterprise Version: 6.8.33
+
+
+Go into 'Cassandra.yaml' section and assign values for following properties as shown below:
+
+    authenticator:  AllowAllAuthenticator
+    authorizer:     AllowAllAuthorizer
+    role_manager:   DseRoleManager
+
+    server_encryption_options:
+        internode_encryption:   none
+
+    General:
+    partitioner:    Murmer3Partitioner
 
     data_file_directories:      /mnt/disks/cassandra_data/data
     metadata_directory:         /mnt/disks/cassandra_data/metadata
@@ -255,41 +302,74 @@ Go into 'Configuration Profiles' in Lifecycle Manager and assign directories for
     commitlog_directory:        /mnt/disks/cassandra_data/commitlog
     hints_directory:            /mnt/disks/cassandra_data/hints
 
+    Cluster Communication:
+    endpoint_snitch:    GossipingPropertyFileSnitch
+
+
+
+Configure 'Repositories' (one time):
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Go into 'Repositories' in Lifecycle Manager and assign values for following properties as shown below:
+
+Name:  test
+Repository:   select 'Acess DataStax repo'
+Use Configured HTTP proxy:  leave it CHECKED (i.e. leave it as-is)
+
+
+
 Deploy the cluster:
 ~~~~~~~~~~~~~~~~~~~~
 Follow the instructions @
 https://docs.datastax.com/en/opscenter/docs/6.8/LCM/opscLCMInstallDSE.html
-For this deployment
+for this deployment.
 
 
-Check directories after deployment
+In Lifecycle Manager: Clusters definition:
+
+For Clusters:
+
+Name:   dse
+SSH Credentials:   Syed Junaid (it will be the user name according to your 'SSH Credentials' settings, see above)
+
+Repository:  test
+config Profile: test
+
+
+For Datacenters:
+
+Name:   improving
+Config Profile: test
+SSH Credentials:   Syed Junaid (it will be the user name according to your 'SSH Credentials' settings, see above)
+
+Workloads: Cassandra
+
+
+For Nodes:
+
+Name:   dse-1
+        (or dse-2 or dse-3 or something else according the name you assigned to the VM when you created it using gCloud command)
+
+Rack:   a (or b or c)
+
+SSH IP Address:  Private IP address of the VM (see Google Cloud Console for this IP address)
+
+SSH Credentials:   Syed Junaid (it will be the user name according to your 'SSH Credentials' settings, see above)
+
+Config Profile:  test
+
+Seed Node:   Select 'Make this a seed node' option for the first node in the cluster. Select 'Automatically choose' for other nodes.
+
+
+To initiate the actual installation:
+
+SELECT 'Install' from  '...' menu (next to dse-1 in Nodes list 'Lifecycle Manager:Cluster' deployment UI).
+  THEN select 'True' for 'Auto bootstrap', and 'Lifecycle Manager Default' for others.
+
+
+
+Check directories after deployment:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 cat /etc/dse/cassandra/cassandra.yaml |grep director
 
-==========================================================================================================
-9042,9142,7000,7001,7199,10000,9180,9100,9160,19042,19142
-=========================================================================================================
-To find out deployed Linux OS and Version for ScyllaDB nodes
+To find out deployed Linux OS and Version for DSE nodes
 $> cat /etc/os-release
-
-
-To download a open-source Cassandra distribution
-$> wget https://dlcdn.apache.org/cassandra/4.1.0/apache-cassandra-4.1.0-bin.tar.gz
-
-
-To expand unzip the distribution to the folder
-$> tar -xzf apache-cassandra-4.1.0-bin.tar.gz
-
--- NOTE: the above will create a 'apache-cassandra-4.1.0' folder in the current directory
-
-
-
-Make the following changes to '~/apache-cassandra-4.1.0/conf/cassandra.yaml' file:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-cluster_name: 'Cassandra'
-
-
-
-Visit URL:
-https://console.cloud.google.com/marketplace/details/click-to-deploy-images/cassandra?project=scylla-cassandra-comparison
