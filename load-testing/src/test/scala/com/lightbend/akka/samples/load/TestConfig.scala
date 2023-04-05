@@ -10,7 +10,10 @@ case class TestConfig(
   targetHost: String,
   targetPort: Int,
   testDuration: FiniteDuration,
-  usersPerSecond: Int)
+  usersPerSecond: Int,
+  rampFrom: Int,
+  rampTo: Int,
+  rampOver: FiniteDuration)
 
 object TestConfig {
   implicit val reader = deriveReader[TestConfig]
