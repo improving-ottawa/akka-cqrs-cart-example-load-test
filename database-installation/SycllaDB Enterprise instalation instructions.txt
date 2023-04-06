@@ -1,0 +1,106 @@
+-----------------------------------------------------------------------------------------------
+STEP-1: Launch the ScyllaDB instances (each instance will be a separate one node cluster)
+-----------------------------------------------------------------------------------------------
+
+
+gcloud compute instances create scylla-1 --image scylladb-enterprise-2022-2-3 --image-project scylla-images --local-ssd interface=nvme --local-ssd interface=nvme --local-ssd interface=nvme --local-ssd interface=nvme --machine-type=n2-highmem-4 --zone=northamerica-northeast2-a
+
+NOTE:
+There is no option to specify the local-ssd size. It is fixed to 375GB. If you need more local ssd then repeat '--local-ssd interface=nvme' to achieve a desired size of total attached local ssd capacity.
+
+
+Configure the VMs for SSH connection:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# If not already done, Generate SSH keys on your local machine:
+ssh-keygen -t rsa -f ~/.ssh/gcloud-ssh-dse-vms -C syed.junaid@yoppworks.com
+ssh-keygen -p -N "" -m pem -f ~/.ssh/gcloud-ssh-dse-vms
+
+# Transfer Public Key to the VM instance(s) once they are created:
+# Print public key
+$> cat ~/.ssh/gcloud-ssh-dse-vms.pub
+
+# <Edit> your VM instance in Google Cloud console and select <ADD ITEM> under 'SSH Keys', and copy your Public Key (from previous step) there.
+
+
+Configure firewall rules for ScyllaDB cluster nodes:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Edit scylla-1, scylla-2, and scylla-3 nodes (created above) in GCP console,
+# and, for each:
+Allow HTTP and HTTPS traffic in 'firewalls' section AND add 'scylla-ports' tag
+
+
+Connect to each of the GCP VM instances via SSH from local machine terminal:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# SSH into each of the above 3 VMs to ensure each one has 4 NVMe SSD of 375GB each mounted
+# ssh -i ~/.ssh/gcloud-ssh-dse-vms your-gcloud-user-id@vm-public-ip
+# For example:
+$> ssh -i ~/.ssh/gcloud-ssh-dse-vms syed.junaid@34.130.37.68
+
+
+List attached NVMe disk drives:
+$> lsblk
+
+
+To find out deployed Linux OS and Version for DSE nodes
+$> cat /etc/os-release
+
+
+-----------------------------------------------------------------------------------------------------
+STEP-2: Stop each individual ScyllaDB instance and clear the data
+-----------------------------------------------------------------------------------------------------
+REF: https://docs.scylladb.com/stable/operating-scylla/procedures/cluster-management/clear-data.html
+
+
+sudo systemctl stop scylla-server
+sudo systemctl status scylla-server
+
+ls -al /var/lib/scylla/data
+
+sudo rm -rf /var/lib/scylla/data
+sudo find /var/lib/scylla/commitlog -type f -delete
+sudo find /var/lib/scylla/hints -type f -delete
+sudo find /var/lib/scylla/view_hints -type f -delete
+
+
+-----------------------------------------------------------------------------------------------------
+STEP-3: Perform the cluster configuration on each of the nodes
+-----------------------------------------------------------------------------------------------------
+REF: https://docs.scylladb.com/stable/operating-scylla/procedures/cluster-management/create-cluster.html
+
+sudo nano /etc/scylla/scylla.yaml
+
+make:
+     cluster_name: scylla
+     endpoint_snitch: GossipingPropertyFileSnitch
+     auto_bootstrap: true  (for the first/seed node)
+
+leave as-is:
+            rpc_address: 0.0.0.0
+
+
+Among other settings as directed in the REF: link above.
+
+NOTE: Recommendations from ScyllaDB support team for deploying all ScyllaDB nodes in a single zone
+Manually set endpoint_snitch: GossipingPropertyFileSnitch and force artificial racks using cassandra-rackdc.properties file for each node. In the end, you should still have number of racks matching the replication factor
+
+
+
+sudo nano /etc/scylla/cassandra-rackdc.properties
+
+make:
+     dc=yoppworks
+     rack=x  ,  rack=y ,  rack=z
+                                for 1st, 2nd, and 3rd node respectively
+
+
+-----------------------------------------------------------------------------------------------------
+STEP-3.1: OPTIONALLY???  run scylla_setup
+-----------------------------------------------------------------------------------------------------
+cd /opt/scylladb/scripts/
+sudo ./scylla_setup
+
+
+--------------------------------------------------------------------------------------
+STEP-4: Bring all the nodes back-up, one after another, starting with the seed node
+--------------------------------------------------------------------------------------
+sudo systemctl start scylla-server
