@@ -16,3 +16,4 @@ target/
 project/bloop
 project/metals.sbt
 kafka-*/
+set-token.sh

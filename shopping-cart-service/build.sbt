@@ -59,6 +59,33 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-cluster-tools" % AkkaVersion
 )
 
+val token = sys.env.getOrElse("LB_TOKEN", throw new IllegalStateException("Could not find token"))
+resolvers += "lightbend-commercial-mvn" at s"https://repo.lightbend.com/pass/${token}/commercial-releases"
+resolvers += Resolver.url("lightbend-commercial-ivy", url(s"https://repo.lightbend.com/pass/${token}/commercial-releases"))(Resolver.ivyStylePatterns)
+
+// Add the Cinnamon Agent for run and test
+run / cinnamon := true
+test / cinnamon := true
+
+// Set the Cinnamon Agent log level
+cinnamonLogLevel := "INFO"
+// cinnamon
+enablePlugins(Cinnamon)
+libraryDependencies ++= Seq(
+  // Use Akka instrumentation
+  Cinnamon.library.cinnamonAkka,
+  Cinnamon.library.cinnamonAkkaTyped,
+  Cinnamon.library.cinnamonAkkaPersistence,
+  Cinnamon.library.cinnamonAkkaStream,
+  Cinnamon.library.cinnamonAkkaProjection,
+  // Use Akka HTTP instrumentation
+  Cinnamon.library.cinnamonAkkaHttp,
+  // Use Akka gRPC instrumentation
+  Cinnamon.library.cinnamonAkkaGrpc,
+  Cinnamon.library.cinnamonPrometheus,
+  Cinnamon.library.cinnamonPrometheusHttpServer
+)
+
 libraryDependencies ++= Seq(
   // 1. Basic dependencies for a clustered application
   "com.typesafe.akka" %% "akka-stream" % AkkaVersion,
