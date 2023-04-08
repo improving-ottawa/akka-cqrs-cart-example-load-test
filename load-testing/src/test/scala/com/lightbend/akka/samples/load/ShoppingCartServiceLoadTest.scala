@@ -27,7 +27,7 @@ class ShoppingCartServiceLoadTest extends Simulation {
   private val rampFrom = testConfig.rampFrom
   private val rampTo = testConfig.rampTo
 
-  private val loadDuration: FiniteDuration = (1 * 60).seconds // test duration in seconds
+  private val loadDuration: FiniteDuration = testConfig.testDuration
 
   println(s"Starting Shopping cart load test at ${users} users per second")
 

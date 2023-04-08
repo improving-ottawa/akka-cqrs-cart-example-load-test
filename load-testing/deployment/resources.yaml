@@ -14,8 +14,8 @@ spec:
             claimName: shopping-cart-load-driver-pvc
       containers:
         - name: shopping-cart-load-driver
-          image: shopping-cart-load-test/shopping-cart-load-test-driver:0.1.0-SNAPSHOT
-          image: northamerica-northeast2-docker.pkg.dev/scylla-cassandra-comparison/load-test/shopping-cart-load-test-driver:0.2.0-SNAPSHOT
+          #image: shopping-cart-load-test/shopping-cart-load-test-driver:0.1.0-SNAPSHOT
+          image: northamerica-northeast2-docker.pkg.dev/scylla-cassandra-comparison/load-test/shopping-cart-load-test-driver:0.3.0-SNAPSHOT
           imagePullPolicy: Always
           volumeMounts:
             - mountPath: "/mnt/simulation-data"
@@ -28,9 +28,17 @@ spec:
             - name: TARGET_PORT
               value: "8101"
             - name: TEST_DURATION
-              value: "30.seconds"
+              value: "60.seconds"
             - name: USERS_PER_SECOND
+              value: "2"
+            - name: RAMP_FROM
               value: "1"
+            - name: RAMP_TO
+              value: "2"
+            - name: RAMP_OVER
+              value: "10.minutes"
+            - name: GATLING_GRPC_LOG_LEVEL
+              value: "DEBUG"  # will log failed responses
             - name: RESULT_BASE_DIR
               value: "/mnt/simulation-data" # should pick/set a more appropriate mount path
             - name: POD_NAME
