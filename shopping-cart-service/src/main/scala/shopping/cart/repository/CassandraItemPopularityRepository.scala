@@ -35,9 +35,9 @@ class CassandraItemPopularityRepository(cassandraSession: CassandraSession)(
       itemId: String): Future[Option[Long]] = {
     CassandraSource(s"SELECT count FROM cart_service.item_popularity WHERE item_id = ?", itemId)(cassandraSession)
       .map(_.getLong("count"))
-      .map {
-        case 0 => None
-        case c => Some(c)
+      .fold(Option.empty[Long]) {
+        case (None, count) if count == 0 => None
+        case (_, count) => Some(count)
       }
       .runWith(Sink.head[Option[Long]])
   }
