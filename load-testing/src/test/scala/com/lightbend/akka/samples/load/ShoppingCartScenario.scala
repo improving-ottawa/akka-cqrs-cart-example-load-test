@@ -5,6 +5,8 @@ import com.github.phisgr.gatling.grpc.protocol.GrpcProtocol
 import com.lightbend.akka.samples.load.ShoppingCartScenario.Catalogue
 import io.gatling.commons.validation.Success
 import shopping.cart.proto.{AddItemRequest, CheckoutRequest, ShoppingCartServiceGrpc, UpdateItemRequest}
+
+import scala.annotation.tailrec
 // stringToExpression is hidden because we have $ in GrpcDsl
 import io.gatling.core.Predef.{stringToExpression => _, _}
 import io.gatling.core.feeder.Feeder
@@ -27,40 +29,31 @@ class ShoppingCartScenario(catalogue: Catalogue, randomPayloadBytes: Int)(protoc
   private val numberOfUpdateGen = Gen.choose(5, 10)
   private val randomPayloadGen = Gen.listOfN(randomPayloadBytes, Gen.hexChar).map(_.map(_.toByte).toArray)
 
-  private val scenarioInputGen: Gen[Map[String, Any]] = {
-    for {
-      itemId <- catalogue.randomItemGen
-      firstQuantity <- quantityGen
-      numberOfUpdates <- numberOfUpdateGen
-    } yield {
-      Map(
-        "itemId" -> itemId,
-        "firstQuantity" -> firstQuantity,
-        "numberOfUpdates" -> numberOfUpdates
-      )
-    }
-  }
+  private val randomSubsetOfItems = catalogue.randomPortionOfItemsUnique().sample.get
+
+  private val scenarioInputGen: Gen[Map[String, Any]] =
+    Map("numberOfUpdates" -> numberOfUpdateGen.sample.get)
 
   private val fillCartFeeder: Feeder[Any] = Iterator.continually(scenarioInputGen.sample.get)
 
   private val addItemRequestExpr: Expression[AddItemRequest] = { s =>
     for {
       cartId <- s("cartId").validate[String]
-      itemId <- s("itemId").validate[String]
-    } yield AddItemRequest(cartId, itemId, quantityGen.sample.get, com.google.protobuf.ByteString.copyFrom(randomPayloadGen.sample.get))
+      itemIdIndex <- s("itemCount").validate[Int]
+    } yield AddItemRequest(cartId, randomSubsetOfItems(itemIdIndex), quantityGen.sample.get)
   }
 
   private val updateItemRequestExpr: Expression[UpdateItemRequest] = { s =>
     for {
       cartId <- s("cartId").validate[String]
-      itemId <- s("itemId").validate[String]
-    } yield UpdateItemRequest(cartId, itemId, quantityGen.sample.get, com.google.protobuf.ByteString.copyFrom(randomPayloadGen.sample.get))
+      itemIdIndex <- s("itemCount").validate[Int]
+    } yield UpdateItemRequest(cartId, randomSubsetOfItems(itemIdIndex), quantityGen.sample.get)
   }
 
   val test: ScenarioBuilder =
     scenario("Fill a shopping cart and check out")
       .exec(_.set("cartId", ShoppingCartScenario.shoppingCartIdGen.sample.get))
-      .repeat(_ => Success(catalogue.randomPortionOfItems().sample.get)) {
+      .repeat(_ => Success(randomSubsetOfItems.size), "itemCount") {
         feed(fillCartFeeder)
           .exec(
             grpc(_ => "Add Cart Item")
@@ -106,7 +99,16 @@ object ShoppingCartScenario {
     private val itemsList = items.toList
 
     def randomItemGen: Gen[String] = randomI.map(itemsList(_)._1)
-    def randomPortionOfItems(min: Double = .5, max: Double = .8) = Gen.choose(min,max).map(_ * itemsList.size).map(_.toInt)
+    def randomPortionOfItems(min: Double = .5, max: Double = .8) =
+      Gen.choose(min,max)
+        .map(_ * itemsList.size)
+        .map(_.toInt)
+
+    def item(i: Int): String = itemsList(i)._1
+
+    // select a random number of the items by index
+    def randomPortionOfItemsUnique(): Gen[collection.Seq[String]] =
+      Gen.pick(randomPortionOfItems().sample.get, items.keys)
   }
 
   val catalogueGen = Gen.listOfN(catalogueSizeGen.sample.get, Gen.stringOfN(25, Gen.alphaChar)).map { items =>
