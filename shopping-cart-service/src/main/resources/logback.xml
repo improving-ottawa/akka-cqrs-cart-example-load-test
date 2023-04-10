@@ -12,6 +12,7 @@
         <appender-ref ref="STDOUT" />
     </appender>
 
+    <logger name="shopping.cart" level="WARN"/>
     <root level="INFO">
         <appender-ref ref="ASYNC"/>
     </root>

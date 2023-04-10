@@ -43,8 +43,8 @@ spec:
                 -Dconfig.resource=deployed.conf
                 -XX:+UseG1GC
                 -XX:+UseStringDeduplication
-                -Xmx1500m
-                -Xms1500m
+                -Xmx1100m
+                -Xms1100m
                 -XX:+PrintFlagsFinal
             # this value should stay the same as number of replicas
             - name: REQUIRED_CONTACT_POINT_NR
@@ -54,6 +54,8 @@ spec:
               value: "cassandra-1.cassandra-single:9042"
             - name: CASSANDRA_LOCAL_DATACENTER
               value: "datacenter1"
+            - name: PASSIVATION_ACTIVE_ENTITY_LIMIT
+              value: "100000"
             - name: AKKA_CLUSTER_BOOTSTRAP_SERVICE_NAME
               valueFrom:
                 fieldRef:
@@ -84,9 +86,9 @@ spec:
           resources:
             requests:
               cpu: "250m"
-              memory: "1.5Gi"
+              memory: "1.2Gi"
             limits:
-              memory: "2Gi"
+              memory: "1.2Gi"
 ---
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
