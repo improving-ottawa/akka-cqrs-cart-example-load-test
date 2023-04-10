@@ -1,0 +1,28 @@
+
+
+select count(*) from cart_service.tag_views;
+select count(*) from cart_service.tag_scanning;
+select count(*) from cart_service.projection_management;
+select count(*) from cart_service.metadata;
+
+select count(*) from cart_service.messages;
+select count(*) from cart_service.snapshots;
+select count(*) from cart_service.offset_store;
+
+select count(*) from cart_service.item_popularity;
+select count(*) from cart_service.all_persistence_ids;
+select count(*) from cart_service.tag_write_progress;
+
+
+truncate table cart_service.tag_views;
+truncate table cart_service.tag_scanning;
+truncate table cart_service.projection_management;
+truncate table cart_service.metadata;
+
+truncate table cart_service.messages;
+truncate table cart_service.snapshots;
+truncate table cart_service.offset_store;
+
+truncate table cart_service.item_popularity;
+truncate table cart_service.all_persistence_ids;
+truncate table cart_service.tag_write_progress;
