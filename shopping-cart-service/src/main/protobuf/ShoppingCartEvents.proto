@@ -28,4 +28,5 @@ message ItemRemoved {
 
 message CheckedOut {
     string cartId = 1;
+    bytes random_payload = 4;
 }

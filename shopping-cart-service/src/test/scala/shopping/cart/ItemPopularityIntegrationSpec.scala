@@ -3,15 +3,22 @@ package shopping.cart
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.cluster.MemberStatus
 import akka.cluster.sharding.typed.scaladsl.ClusterSharding
-import akka.cluster.typed.{Cluster, Join}
+import akka.cluster.typed.{ Cluster, Join }
 import akka.persistence.testkit.scaladsl.PersistenceInit
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.{ Config, ConfigFactory }
 import org.scalatest.OptionValues
 import org.scalatest.wordspec.AnyWordSpecLike
-import shopping.cart.projection.{ItemPopularityProjection, JdbcItemPopularityProjectionHandler}
-import shopping.cart.repository.jdbc.{JdbcItemPopularityRepositoryFactory, ScalikeJdbcSession, ScalikeJdbcSetup}
+import shopping.cart.projection.{
+  ItemPopularityProjection,
+  JdbcItemPopularityProjectionHandler
+}
+import shopping.cart.repository.jdbc.{
+  JdbcItemPopularityRepositoryFactory,
+  ScalikeJdbcSession,
+  ScalikeJdbcSetup
+}
 
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{ Await, Future }
 import scala.concurrent.duration._
 
 object ItemPopularityIntegrationSpec {
@@ -24,7 +31,8 @@ class ItemPopularityIntegrationSpec
     with AnyWordSpecLike
     with OptionValues {
 
-  private val ec = JdbcItemPopularityRepositoryFactory.blockingJdbcExecutor(system)
+  private val ec =
+    JdbcItemPopularityRepositoryFactory.blockingJdbcExecutor(system)
   private lazy val itemPopularityRepositoryFactory =
     JdbcItemPopularityRepositoryFactory(ec)
 
@@ -39,9 +47,14 @@ class ItemPopularityIntegrationSpec
 
     ShoppingCart.init(system)
 
-    val jdbcProjectionFactory = JdbcItemPopularityProjectionHandler.jdbcProjectionFactory(itemPopularityRepositoryFactory, system) _
-    val jdbcSourceFactory = JdbcItemPopularityProjectionHandler.jdbcReadJournalSourceFactory
-    ItemPopularityProjection.init(system, jdbcSourceFactory, jdbcProjectionFactory)
+    val jdbcProjectionFactory = JdbcItemPopularityProjectionHandler
+      .jdbcProjectionFactory(itemPopularityRepositoryFactory, system) _
+    val jdbcSourceFactory =
+      JdbcItemPopularityProjectionHandler.jdbcReadJournalSourceFactory
+    ItemPopularityProjection.init(
+      system,
+      jdbcSourceFactory,
+      jdbcProjectionFactory)
 
     super.beforeAll()
   }
@@ -71,27 +84,36 @@ class ItemPopularityIntegrationSpec
       val cart2 = sharding.entityRefFor(ShoppingCart.EntityKey, cartId2)
 
       val reply1: Future[ShoppingCart.Summary] =
-        cart1.askWithStatus(ShoppingCart.AddItem(item1, 3, _))
+        cart1.askWithStatus(
+          ShoppingCart.AddItem(item1, 3, new Array[Byte](0), _))
       reply1.futureValue.items.values.sum should ===(3)
 
       eventually {
         ScalikeJdbcSession.withSession { session =>
-          itemPopularityRepositoryFactory(session).getItem(item1).futureValue should ===(Some(3))
+          itemPopularityRepositoryFactory(session)
+            .getItem(item1)
+            .futureValue should ===(Some(3))
         }
       }
 
       val reply2: Future[ShoppingCart.Summary] =
-        cart1.askWithStatus(ShoppingCart.AddItem(item2, 5, _))
+        cart1.askWithStatus(
+          ShoppingCart.AddItem(item2, 5, new Array[Byte](0), _))
       reply2.futureValue.items.values.sum should ===(3 + 5)
       // another cart
       val reply3: Future[ShoppingCart.Summary] =
-        cart2.askWithStatus(ShoppingCart.AddItem(item2, 4, _))
+        cart2.askWithStatus(
+          ShoppingCart.AddItem(item2, 4, new Array[Byte](0), _))
       reply3.futureValue.items.values.sum should ===(4)
 
       eventually {
         ScalikeJdbcSession.withSession { session =>
-          itemPopularityRepositoryFactory(session).getItem(item2).futureValue should ===(Some(5 + 4))
-          itemPopularityRepositoryFactory(session).getItem(item1).futureValue should ===(Some(3))
+          itemPopularityRepositoryFactory(session)
+            .getItem(item2)
+            .futureValue should ===(Some(5 + 4))
+          itemPopularityRepositoryFactory(session)
+            .getItem(item1)
+            .futureValue should ===(Some(3))
         }
       }
     }

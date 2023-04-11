@@ -1,4 +1,3 @@
-
 package shopping.cart.projection
 
 import akka.Done
@@ -6,12 +5,13 @@ import akka.actor.typed.ActorSystem
 import akka.kafka.scaladsl.SendProducer
 import akka.projection.eventsourced.EventEnvelope
 import akka.projection.scaladsl.Handler
-import com.google.protobuf.any.{Any => ScalaPBAny}
+import com.google.protobuf.ByteString
+import com.google.protobuf.any.{ Any => ScalaPBAny }
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.slf4j.LoggerFactory
-import shopping.cart.{ShoppingCart, proto}
+import shopping.cart.{ proto, ShoppingCart }
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 
 class PublishEventsProjectionHandler(
     system: ActorSystem[_],
@@ -43,19 +43,27 @@ class PublishEventsProjectionHandler(
 
   private def serialize(event: ShoppingCart.Event): Array[Byte] = {
     val protoMessage = event match {
-      case ShoppingCart.ItemAdded(cartId, itemId, quantity) =>
-        proto.ItemAdded(cartId, itemId, quantity)
+      case ShoppingCart.ItemAdded(cartId, itemId, quantity, payload) =>
+        proto.ItemAdded(cartId, itemId, quantity, ByteString.copyFrom(payload))
 
-      case ShoppingCart.ItemQuantityAdjusted(cartId, itemId, quantity, _) =>
-        proto.ItemQuantityAdjusted(cartId, itemId, quantity)
+      case ShoppingCart.ItemQuantityAdjusted(
+            cartId,
+            itemId,
+            quantity,
+            _,
+            payload) =>
+        proto.ItemQuantityAdjusted(
+          cartId,
+          itemId,
+          quantity,
+          ByteString.copyFrom(payload))
       case ShoppingCart.ItemRemoved(cartId, itemId, _) =>
         proto.ItemRemoved(cartId, itemId)
 
-      case ShoppingCart.CheckedOut(cartId, _) =>
-        proto.CheckedOut(cartId)
+      case ShoppingCart.CheckedOut(cartId, _, payload) =>
+        proto.CheckedOut(cartId, ByteString.copyFrom(payload))
     }
     // pack in Any so that type information is included for deserialization
     ScalaPBAny.pack(protoMessage, "shopping-cart-service").toByteArray
   }
 }
-

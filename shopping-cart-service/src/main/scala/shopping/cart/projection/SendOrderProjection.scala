@@ -5,11 +5,11 @@ import akka.cluster.sharding.typed.ShardedDaemonProcessSettings
 import akka.cluster.sharding.typed.scaladsl.ShardedDaemonProcess
 import akka.persistence.jdbc.query.scaladsl.JdbcReadJournal
 import akka.persistence.query.Offset
-import akka.projection.{ProjectionBehavior, ProjectionId}
+import akka.projection.{ ProjectionBehavior, ProjectionId }
 import akka.projection.eventsourced.EventEnvelope
 import akka.projection.eventsourced.scaladsl.EventSourcedProvider
 import akka.projection.jdbc.scaladsl.JdbcProjection
-import akka.projection.scaladsl.{AtLeastOnceProjection, SourceProvider}
+import akka.projection.scaladsl.{ AtLeastOnceProjection, SourceProvider }
 import shopping.cart.ShoppingCart
 import shopping.cart.repository.jdbc.ScalikeJdbcSession
 import shopping.order.proto.ShoppingOrderService

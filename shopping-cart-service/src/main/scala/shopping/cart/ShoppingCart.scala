@@ -41,7 +41,7 @@ object ShoppingCart {
   /**
    * The current state held by the `EventSourcedBehavior`.
    */
-  
+
   final case class State(items: Map[String, Int], checkoutDate: Option[Instant])
       extends CborSerializable {
 
@@ -74,7 +74,6 @@ object ShoppingCart {
     val empty =
       State(items = Map.empty, checkoutDate = None)
   }
-  
 
   /**
    * This interface defines all the commands (messages) that the ShoppingCart actor supports.
@@ -90,6 +89,7 @@ object ShoppingCart {
   final case class AddItem(
       itemId: String,
       quantity: Int,
+      randomPayload: Array[Byte],
       replyTo: ActorRef[StatusReply[Summary]])
       extends Command
 
@@ -107,23 +107,24 @@ object ShoppingCart {
   final case class AdjustItemQuantity(
       itemId: String,
       quantity: Int,
+      randomPayload: Array[Byte],
       replyTo: ActorRef[StatusReply[Summary]])
       extends Command
 
   /**
    * A command to checkout the shopping cart.
    */
-  
-  final case class Checkout(replyTo: ActorRef[StatusReply[Summary]])
+
+  final case class Checkout(
+      randomPayload: Array[Byte],
+      replyTo: ActorRef[StatusReply[Summary]])
       extends Command
-  
 
   /**
    * A command to get the current state of the shopping cart.
    */
-  
+
   final case class Get(replyTo: ActorRef[Summary]) extends Command
-  
 
   /**
    * Summary of the shopping cart state, used in reply messages.
@@ -138,7 +139,11 @@ object ShoppingCart {
     def cartId: String
   }
 
-  final case class ItemAdded(cartId: String, itemId: String, quantity: Int)
+  final case class ItemAdded(
+      cartId: String,
+      itemId: String,
+      quantity: Int,
+      randomPayload: Array[Byte])
       extends Event
 
   final case class ItemRemoved(cartId: String, itemId: String, oldQuantity: Int)
@@ -148,20 +153,21 @@ object ShoppingCart {
       cartId: String,
       itemId: String,
       newQuantity: Int,
-      oldQuantity: Int)
+      oldQuantity: Int,
+      randomPayload: Array[Byte])
       extends Event
 
-  
-  final case class CheckedOut(cartId: String, eventTime: Instant) extends Event
-  
+  final case class CheckedOut(
+      cartId: String,
+      eventTime: Instant,
+      randomPayload: Array[Byte])
+      extends Event
 
   val EntityKey: EntityTypeKey[Command] =
     EntityTypeKey[Command]("ShoppingCart")
-  
 
   val tags = Vector.tabulate(5)(i => s"carts-$i")
 
-  
   def init(system: ActorSystem[_]): Unit = {
     val behaviorFactory: EntityContext[Command] => Behavior[Command] = {
       entityContext =>
@@ -171,10 +177,7 @@ object ShoppingCart {
     }
     ClusterSharding(system).init(Entity(EntityKey)(behaviorFactory))
   }
-  
-  
 
-  
   def apply(cartId: String, projectionTag: String): Behavior[Command] = {
     EventSourcedBehavior
       .withEnforcedReplies[Command, Event, State](
@@ -183,15 +186,13 @@ object ShoppingCart {
         commandHandler =
           (state, command) => handleCommand(cartId, state, command),
         eventHandler = (state, event) => handleEvent(state, event))
-      .withTagger(_ => Set(projectionTag)) 
+      .withTagger(_ => Set(projectionTag))
       .withRetention(RetentionCriteria
         .snapshotEvery(numberOfEvents = 100, keepNSnapshots = 3))
       .onPersistFailure(
         SupervisorStrategy.restartWithBackoff(200.millis, 5.seconds, 0.1))
   }
-  
 
-  
   private def handleCommand(
       cartId: String,
       state: State,
@@ -209,7 +210,7 @@ object ShoppingCart {
       state: State,
       command: Command): ReplyEffect[Event, State] = {
     command match {
-      case AddItem(itemId, quantity, replyTo) =>
+      case AddItem(itemId, quantity, randomBytes, replyTo) =>
         if (state.hasItem(itemId))
           Effect.reply(replyTo)(
             StatusReply.Error(
@@ -219,11 +220,10 @@ object ShoppingCart {
             StatusReply.Error("Quantity must be greater than zero"))
         else
           Effect
-            .persist(ItemAdded(cartId, itemId, quantity))
+            .persist(ItemAdded(cartId, itemId, quantity, randomBytes))
             .thenReply(replyTo) { updatedCart =>
               StatusReply.Success(updatedCart.toSummary)
             }
-      
 
       case RemoveItem(itemId, replyTo) =>
         if (state.hasItem(itemId))
@@ -236,7 +236,7 @@ object ShoppingCart {
             StatusReply.Success(state.toSummary)
           ) // removing an item is idempotent
 
-      case AdjustItemQuantity(itemId, quantity, replyTo) =>
+      case AdjustItemQuantity(itemId, quantity, randomBytes, replyTo) =>
         if (quantity <= 0)
           Effect.reply(replyTo)(
             StatusReply.Error("Quantity must be greater than zero"))
@@ -247,49 +247,44 @@ object ShoppingCart {
                 cartId,
                 itemId,
                 quantity,
-                state.items(itemId)))
+                state.items(itemId),
+                randomBytes))
             .thenReply(replyTo)(updatedCart =>
               StatusReply.Success(updatedCart.toSummary))
         else
           Effect.reply(replyTo)(StatusReply.Error(
             s"Cannot adjust quantity for item '$itemId'. Item not present on cart"))
 
-      
-      case Checkout(replyTo) =>
+      case Checkout(randomBytes, replyTo) =>
         if (state.isEmpty)
           Effect.reply(replyTo)(
             StatusReply.Error("Cannot checkout an empty shopping cart"))
         else
           Effect
-            .persist(CheckedOut(cartId, Instant.now()))
+            .persist(CheckedOut(cartId, Instant.now(), randomBytes))
             .thenReply(replyTo)(updatedCart =>
               StatusReply.Success(updatedCart.toSummary))
-      
 
-      
       case Get(replyTo) =>
         Effect.reply(replyTo)(state.toSummary)
-      
-      
+
     }
   }
-  
 
-  
   private def checkedOutShoppingCart(
       cartId: String,
       state: State,
       command: Command): ReplyEffect[Event, State] = {
     command match {
-      
+
       case Get(replyTo) =>
         Effect.reply(replyTo)(state.toSummary)
-      
+
       case cmd: AddItem =>
         Effect.reply(cmd.replyTo)(
           StatusReply.Error(
             "Can't add an item to an already checked out shopping cart"))
-      
+
       case cmd: RemoveItem =>
         Effect.reply(cmd.replyTo)(
           StatusReply.Error(
@@ -298,28 +293,26 @@ object ShoppingCart {
         Effect.reply(cmd.replyTo)(
           StatusReply.Error(
             "Can't adjust item on an already checked out shopping cart"))
-      
+
       case cmd: Checkout =>
         Effect.reply(cmd.replyTo)(
           StatusReply.Error("Can't checkout already checked out shopping cart"))
     }
   }
-  
 
-  
   private def handleEvent(state: State, event: Event): State = {
     event match {
-      case ItemAdded(_, itemId, quantity) =>
+      case ItemAdded(_, itemId, quantity, _) =>
         state.updateItem(itemId, quantity)
-      
+
       case ItemRemoved(_, itemId, _) =>
         state.removeItem(itemId)
-      case ItemQuantityAdjusted(_, itemId, quantity, _) =>
+      case ItemQuantityAdjusted(_, itemId, quantity, _, _) =>
         state.updateItem(itemId, quantity)
-      
-      case CheckedOut(_, eventTime) =>
+
+      case CheckedOut(_, eventTime, _) =>
         state.checkout(eventTime)
     }
   }
-  
+
 }

@@ -24,14 +24,15 @@ class CassandraItemPopularityProjectionHandler(
   override def process(
       envelope: EventEnvelope[ShoppingCart.Event]): Future[Done] = {
     envelope.event match {
-      case ShoppingCart.ItemAdded(_, itemId, quantity) =>
+      case ShoppingCart.ItemAdded(_, itemId, quantity, _) =>
         update(itemId, quantity)
 
       case ShoppingCart.ItemQuantityAdjusted(
             _,
             itemId,
             newQuantity,
-            oldQuantity) =>
+            oldQuantity,
+            _) =>
         update(itemId, newQuantity - oldQuantity)
 
       case ShoppingCart.ItemRemoved(_, itemId, oldQuantity) =>

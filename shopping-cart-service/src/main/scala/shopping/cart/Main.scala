@@ -6,11 +6,17 @@ import akka.grpc.GrpcClientSettings
 import akka.management.cluster.bootstrap.ClusterBootstrap
 import akka.management.scaladsl.AkkaManagement
 import akka.stream.alpakka.cassandra.CassandraSessionSettings
-import akka.stream.alpakka.cassandra.scaladsl.{CassandraSession, CassandraSessionRegistry}
+import akka.stream.alpakka.cassandra.scaladsl.{
+  CassandraSession,
+  CassandraSessionRegistry
+}
 import org.slf4j.LoggerFactory
-import shopping.cart.projection.{CassandraItemPopularityProjectionHandler, ItemPopularityProjection}
+import shopping.cart.projection.{
+  CassandraItemPopularityProjectionHandler,
+  ItemPopularityProjection
+}
 import shopping.cart.repository.CassandraItemPopularityRepository
-import shopping.order.proto.{ShoppingOrderService, ShoppingOrderServiceClient}
+import shopping.order.proto.{ ShoppingOrderService, ShoppingOrderServiceClient }
 
 import scala.util.control.NonFatal
 
@@ -57,19 +63,24 @@ object Main {
     // Cassandra
     // read event journal from Cassandra to source popularity projection
     val readJournalSourceFactory: ItemPopularityProjection.SourceFactory =
-    CassandraItemPopularityProjectionHandler.sourceFactory
+      CassandraItemPopularityProjectionHandler.sourceFactory
 
     val sessionSettings = CassandraSessionSettings()
     val cassandraSession: CassandraSession =
       CassandraSessionRegistry.get(system).sessionFor(sessionSettings)
 
-    val popularityRepo = new CassandraItemPopularityRepository(cassandraSession)(system)
+    val popularityRepo = new CassandraItemPopularityRepository(
+      cassandraSession)(system)
 
     // project event journal to cassandra projection
     val projectionFactory: ItemPopularityProjection.ProjectionFactory =
-      CassandraItemPopularityProjectionHandler.cassandraProjectionFactory(popularityRepo)
+      CassandraItemPopularityProjectionHandler.cassandraProjectionFactory(
+        popularityRepo)
 
-    ItemPopularityProjection.init(system, readJournalSourceFactory, projectionFactory)
+    ItemPopularityProjection.init(
+      system,
+      readJournalSourceFactory,
+      projectionFactory)
 
     // disable kafka domain event projection: goal is to minimize moving parts involved in a load test
     //PublishEventsProjection.init(system)

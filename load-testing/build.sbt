@@ -32,7 +32,7 @@ lazy val loadTesting = project
       "com.github.pureconfig" %% "pureconfig" % "0.17.2",
       "io.gatling.highcharts" % "gatling-charts-highcharts" % gatling,
       "io.gatling" % "gatling-test-framework" % gatling,
-      "com.github.phisgr" % "gatling-grpc" % "0.15.1"
+      "com.github.phisgr" % "gatling-grpc" % "0.16.0"
     ),
     dependencyOverrides ++= Seq(
       "org.scala-lang.modules" %% "scala-parser-combinators" % "2.1.1"
