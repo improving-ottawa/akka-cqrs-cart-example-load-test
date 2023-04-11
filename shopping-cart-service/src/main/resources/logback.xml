@@ -13,7 +13,7 @@
     </appender>
 
     <logger name="shopping.cart" level="WARN"/>
-    <root level="INFO">
+    <root level="WARN">
         <appender-ref ref="ASYNC"/>
     </root>
 
