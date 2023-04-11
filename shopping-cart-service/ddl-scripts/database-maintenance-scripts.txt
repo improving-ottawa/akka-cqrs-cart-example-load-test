@@ -26,3 +26,20 @@ truncate table cart_service.offset_store;
 truncate table cart_service.item_popularity;
 truncate table cart_service.all_persistence_ids;
 truncate table cart_service.tag_write_progress;
+
+
+drop table cart_service.tag_views;
+drop table cart_service.tag_scanning;
+drop table cart_service.projection_management;
+drop table cart_service.metadata;
+
+drop table cart_service.messages;
+drop table cart_service.snapshots;
+drop table cart_service.offset_store;
+
+drop table cart_service.item_popularity;
+drop table cart_service.all_persistence_ids;
+drop table cart_service.tag_write_progress;
+
+
+drop keyspace cart_service;
