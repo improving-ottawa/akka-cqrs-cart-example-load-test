@@ -4,7 +4,7 @@ import akka.actor.typed.ActorSystem
 import akka.persistence.jdbc.query.javadsl.JdbcReadJournal
 import akka.projection.eventsourced.EventEnvelope
 import akka.projection.eventsourced.scaladsl.EventSourcedProvider
-import akka.projection.jdbc.scaladsl.{JdbcHandler, JdbcProjection}
+import akka.projection.jdbc.scaladsl.{ JdbcHandler, JdbcProjection }
 import org.slf4j.LoggerFactory
 import shopping.cart.ShoppingCart
 import shopping.cart.projection.ItemPopularityProjection.SourceFactory
@@ -13,7 +13,7 @@ import shopping.cart.repository.jdbc.ScalikeJdbcSession
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.DurationInt
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{ Await, Future }
 
 // TODO:  refactor to just be a Handler[EventEnvelop[ShoppingCart.Event]] will allow to collapse with
 //  [[CassandraItemPopularityProjectionHandler]] into something generic (and get rid of that nasty Await!)
@@ -30,14 +30,15 @@ class JdbcItemPopularityProjectionHandler(
       session: ScalikeJdbcSession,
       envelope: EventEnvelope[ShoppingCart.Event]): Unit = {
     val futUnit: Future[Unit] = envelope.event match {
-      case ShoppingCart.ItemAdded(_, itemId, quantity) =>
+      case ShoppingCart.ItemAdded(_, itemId, quantity, _) =>
         update(session, itemId, quantity)
 
       case ShoppingCart.ItemQuantityAdjusted(
             _,
             itemId,
             newQuantity,
-            oldQuantity) =>
+            oldQuantity,
+            _) =>
         update(session, itemId, newQuantity - oldQuantity)
 
       case ShoppingCart.ItemRemoved(_, itemId, oldQuantity) =>

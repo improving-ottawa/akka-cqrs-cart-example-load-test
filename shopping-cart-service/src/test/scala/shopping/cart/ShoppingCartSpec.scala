@@ -39,28 +39,30 @@ class ShoppingCartSpec
     "add item" in {
       val result1 =
         eventSourcedTestKit.runCommand[StatusReply[ShoppingCart.Summary]](
-          replyTo => ShoppingCart.AddItem("foo", 42, replyTo))
+          replyTo =>
+            ShoppingCart.AddItem("foo", 42, new Array[Byte](0), replyTo))
       result1.reply should ===(
         StatusReply.Success(
           ShoppingCart.Summary(Map("foo" -> 42), checkedOut = false)))
-      result1.event should ===(ShoppingCart.ItemAdded(cartId, "foo", 42))
+      result1.event should ===(
+        ShoppingCart.ItemAdded(cartId, "foo", 42, new Array[Byte](0)))
     }
 
     "reject already added item" in {
       val result1 =
         eventSourcedTestKit.runCommand[StatusReply[ShoppingCart.Summary]](
-          ShoppingCart.AddItem("foo", 42, _))
+          ShoppingCart.AddItem("foo", 42, new Array[Byte](0), _))
       result1.reply.isSuccess should ===(true)
       val result2 =
         eventSourcedTestKit.runCommand[StatusReply[ShoppingCart.Summary]](
-          ShoppingCart.AddItem("foo", 13, _))
+          ShoppingCart.AddItem("foo", 13, new Array[Byte](0), _))
       result2.reply.isError should ===(true)
     }
 
     "remove item" in {
       val result1 =
         eventSourcedTestKit.runCommand[StatusReply[ShoppingCart.Summary]](
-          ShoppingCart.AddItem("foo", 42, _))
+          ShoppingCart.AddItem("foo", 42, new Array[Byte](0), _))
       result1.reply.isSuccess should ===(true)
       val result2 =
         eventSourcedTestKit.runCommand[StatusReply[ShoppingCart.Summary]](
@@ -74,26 +76,27 @@ class ShoppingCartSpec
     "adjust quantity" in {
       val result1 =
         eventSourcedTestKit.runCommand[StatusReply[ShoppingCart.Summary]](
-          ShoppingCart.AddItem("foo", 42, _))
+          ShoppingCart.AddItem("foo", 42, new Array[Byte](0), _))
       result1.reply.isSuccess should ===(true)
       val result2 =
         eventSourcedTestKit.runCommand[StatusReply[ShoppingCart.Summary]](
-          ShoppingCart.AdjustItemQuantity("foo", 43, _))
+          ShoppingCart.AdjustItemQuantity("foo", 43, new Array[Byte](0), _))
       result2.reply should ===(
         StatusReply.Success(
           ShoppingCart.Summary(Map("foo" -> 43), checkedOut = false)))
       result2.event should ===(
-        ShoppingCart.ItemQuantityAdjusted(cartId, "foo", 43, 42))
+        ShoppingCart
+          .ItemQuantityAdjusted(cartId, "foo", 43, 42, new Array[Byte](0)))
     }
 
-    
     "checkout" in {
       val result1 =
         eventSourcedTestKit.runCommand[StatusReply[ShoppingCart.Summary]](
-          ShoppingCart.AddItem("foo", 42, _))
+          ShoppingCart.AddItem("foo", 42, new Array[Byte](0), _))
       result1.reply.isSuccess should ===(true)
-      val result2 = eventSourcedTestKit
-        .runCommand[StatusReply[ShoppingCart.Summary]](ShoppingCart.Checkout(_))
+      val result2 =
+        eventSourcedTestKit.runCommand[StatusReply[ShoppingCart.Summary]](
+          ShoppingCart.Checkout(new Array[Byte](0), _))
       result2.reply should ===(
         StatusReply.Success(
           ShoppingCart.Summary(Map("foo" -> 42), checkedOut = true)))
@@ -102,16 +105,14 @@ class ShoppingCartSpec
 
       val result3 =
         eventSourcedTestKit.runCommand[StatusReply[ShoppingCart.Summary]](
-          ShoppingCart.AddItem("bar", 13, _))
+          ShoppingCart.AddItem("bar", 13, new Array[Byte](0), _))
       result3.reply.isError should ===(true)
     }
-    
 
-    
     "get" in {
       val result1 =
         eventSourcedTestKit.runCommand[StatusReply[ShoppingCart.Summary]](
-          ShoppingCart.AddItem("foo", 42, _))
+          ShoppingCart.AddItem("foo", 42, new Array[Byte](0), _))
       result1.reply.isSuccess should ===(true)
 
       val result2 = eventSourcedTestKit.runCommand[ShoppingCart.Summary](
@@ -119,12 +120,11 @@ class ShoppingCartSpec
       result2.reply should ===(
         ShoppingCart.Summary(Map("foo" -> 42), checkedOut = false))
     }
-    
 
     "keep its state" in {
       val result1 =
         eventSourcedTestKit.runCommand[StatusReply[ShoppingCart.Summary]](
-          ShoppingCart.AddItem("foo", 42, _))
+          ShoppingCart.AddItem("foo", 42, new Array[Byte](0), _))
       result1.reply should ===(
         StatusReply.Success(
           ShoppingCart.Summary(Map("foo" -> 42), checkedOut = false)))

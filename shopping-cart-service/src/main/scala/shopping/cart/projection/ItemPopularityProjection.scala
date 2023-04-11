@@ -6,7 +6,7 @@ import akka.cluster.sharding.typed.scaladsl.ShardedDaemonProcess
 import akka.persistence.query.Offset
 import akka.projection.eventsourced.EventEnvelope
 import akka.projection.scaladsl.SourceProvider
-import akka.projection.{Projection, ProjectionBehavior, ProjectionId}
+import akka.projection.{ Projection, ProjectionBehavior, ProjectionId }
 import shopping.cart.ShoppingCart
 
 object ItemPopularityProjection {
@@ -22,10 +22,9 @@ object ItemPopularityProjection {
    * `(projectionId, sourceProvider, tag) => Projection[EventEnvelope[ShoppingCart.Event]]`
    */
   type ProjectionFactory = (
-    ProjectionId,
-      SourceProvider[
-        Offset,
-        EventEnvelope[ShoppingCart.Event]], String) => Projection[EventEnvelope[ShoppingCart.Event]]
+      ProjectionId,
+      SourceProvider[Offset, EventEnvelope[ShoppingCart.Event]],
+      String) => Projection[EventEnvelope[ShoppingCart.Event]]
 
   def init(
       system: ActorSystem[_],
@@ -35,7 +34,8 @@ object ItemPopularityProjection {
       name = "ItemPopularityProjection",
       ShoppingCart.tags.size,
       index =>
-        ProjectionBehavior(createProjectionFor(system, sourceFactory, projectionFactory, index)),
+        ProjectionBehavior(
+          createProjectionFor(system, sourceFactory, projectionFactory, index)),
       ShardedDaemonProcessSettings(system),
       Some(ProjectionBehavior.Stop))
   }
@@ -44,15 +44,13 @@ object ItemPopularityProjection {
       system: ActorSystem[_],
       sourceFactory: SourceFactory,
       projectionFactory: ProjectionFactory,
-      index: Int)
-      : Projection[EventEnvelope[ShoppingCart.Event]] = {
+      index: Int): Projection[EventEnvelope[ShoppingCart.Event]] = {
     val tag = ShoppingCart.tags(index)
 
     projectionFactory(
       ProjectionId("ItemPopularityProjection", tag),
       sourceFactory(tag, system),
-      tag
-    )
+      tag)
   }
 
 }

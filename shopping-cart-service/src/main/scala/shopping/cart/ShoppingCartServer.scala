@@ -28,16 +28,15 @@ object ShoppingCartServer {
       ServiceHandler.concatOrNotFound(
         proto.ShoppingCartServiceHandler.partial(grpcService),
         // ServerReflection enabled to support grpcurl without import-path and proto parameters
-        ServerReflection.partial(List(proto.ShoppingCartService))
-      ) 
+        ServerReflection.partial(List(proto.ShoppingCartService)))
 
     val bound =
       Http()
         .newServerAt(interface, port)
         .bind(service)
-        .map(_.addToCoordinatedShutdown(3.seconds)) 
+        .map(_.addToCoordinatedShutdown(3.seconds))
 
-    bound.onComplete { 
+    bound.onComplete {
       case Success(binding) =>
         val address = binding.localAddress
         system.log.info(

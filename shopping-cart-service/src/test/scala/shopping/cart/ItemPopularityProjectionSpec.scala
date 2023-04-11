@@ -6,29 +6,30 @@ import akka.persistence.query.Offset
 import akka.projection.ProjectionId
 import akka.projection.eventsourced.EventEnvelope
 import akka.projection.scaladsl.Handler
-import akka.projection.testkit.scaladsl.{ProjectionTestKit, TestProjection, TestSourceProvider}
+import akka.projection.testkit.scaladsl.{
+  ProjectionTestKit,
+  TestProjection,
+  TestSourceProvider
+}
 import akka.stream.scaladsl.Source
 import org.scalatest.wordspec.AnyWordSpecLike
 import shopping.cart.projection.JdbcItemPopularityProjectionHandler
 import shopping.cart.repository.ItemPopularityRepository
 
 import java.time.Instant
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 
 object ItemPopularityProjectionSpec {
   // stub out the db layer and simulate recording item count updates
   class TestItemPopularityRepository extends ItemPopularityRepository {
     var counts: Map[String, Long] = Map.empty
 
-    override def update(
-        itemId: String,
-        delta: Int): Future[Unit] = {
+    override def update(itemId: String, delta: Int): Future[Unit] = {
       counts = counts + (itemId -> (counts.getOrElse(itemId, 0L) + delta))
       Future.successful(())
     }
 
-    override def getItem(
-        itemId: String): Future[Option[Long]] =
+    override def getItem(itemId: String): Future[Option[Long]] =
       Future.successful(counts.get(itemId))
   }
 }
@@ -68,23 +69,36 @@ class ItemPopularityProjectionSpec
         Source(
           List[EventEnvelope[ShoppingCart.Event]](
             createEnvelope(
-              ShoppingCart.ItemAdded("a7098", "bowling shoes", 1),
+              ShoppingCart
+                .ItemAdded("a7098", "bowling shoes", 1, new Array[Byte](0)),
               0L),
             createEnvelope(
-              ShoppingCart.ItemQuantityAdjusted("a7098", "bowling shoes", 2, 1),
+              ShoppingCart.ItemQuantityAdjusted(
+                "a7098",
+                "bowling shoes",
+                2,
+                1,
+                new Array[Byte](0)),
               1L),
             createEnvelope(
-              ShoppingCart
-                .CheckedOut("a7098", Instant.parse("2020-01-01T12:00:00.00Z")),
+              ShoppingCart.CheckedOut(
+                "a7098",
+                Instant.parse("2020-01-01T12:00:00.00Z"),
+                new Array[Byte](0)),
               2L),
             createEnvelope(
-              ShoppingCart.ItemAdded("0d12d", "akka t-shirt", 1),
+              ShoppingCart
+                .ItemAdded("0d12d", "akka t-shirt", 1, new Array[Byte](0)),
               3L),
-            createEnvelope(ShoppingCart.ItemAdded("0d12d", "skis", 1), 4L),
+            createEnvelope(
+              ShoppingCart.ItemAdded("0d12d", "skis", 1, new Array[Byte](0)),
+              4L),
             createEnvelope(ShoppingCart.ItemRemoved("0d12d", "skis", 1), 5L),
             createEnvelope(
-              ShoppingCart
-                .CheckedOut("0d12d", Instant.parse("2020-01-01T12:05:00.00Z")),
+              ShoppingCart.CheckedOut(
+                "0d12d",
+                Instant.parse("2020-01-01T12:05:00.00Z"),
+                new Array[Byte](0)),
               6L)))
 
       val repository = new TestItemPopularityRepository

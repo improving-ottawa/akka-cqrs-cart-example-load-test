@@ -1,6 +1,6 @@
 package shopping.cart
 
-import akka.actor.typed.{ActorRef, ActorSystem}
+import akka.actor.typed.{ ActorRef, ActorSystem }
 import akka.cluster.sharding.typed.scaladsl.ClusterSharding
 import akka.grpc.GrpcServiceException
 import akka.pattern.StatusReply
@@ -12,12 +12,10 @@ import shopping.cart.repository.ItemPopularityRepository
 import java.util.concurrent.TimeoutException
 import scala.concurrent.Future
 
-
 class ShoppingCartServiceImpl(
     system: ActorSystem[_],
     itemPopularityRepository: ItemPopularityRepository)
     extends proto.ShoppingCartService {
-
 
   import system.executionContext
 
@@ -33,20 +31,30 @@ class ShoppingCartServiceImpl(
     logger.info("addItem {} to cart {}", in.itemId, in.cartId)
     val entityRef = sharding.entityRefFor(ShoppingCart.EntityKey, in.cartId)
     val reply: Future[ShoppingCart.Summary] =
-      entityRef.askWithStatus(ShoppingCart.AddItem(in.itemId, in.quantity, _))
+      entityRef.askWithStatus(
+        ShoppingCart
+          .AddItem(in.itemId, in.quantity, in.randomPayload.toByteArray, _))
     val response = reply.map(cart => toProtoCart(cart))
     convertError(response)
   }
 
   override def updateItem(in: proto.UpdateItemRequest): Future[proto.Cart] = {
-    logger.info("updateItem {} ({}) to cart {}", in.itemId, in.quantity, in.cartId)
+    logger.info(
+      "updateItem {} ({}) to cart {}",
+      in.itemId,
+      in.quantity,
+      in.cartId)
     val entityRef = sharding.entityRefFor(ShoppingCart.EntityKey, in.cartId)
 
     def command(replyTo: ActorRef[StatusReply[ShoppingCart.Summary]]) =
       if (in.quantity == 0)
         ShoppingCart.RemoveItem(in.itemId, replyTo)
       else
-        ShoppingCart.AdjustItemQuantity(in.itemId, in.quantity, replyTo)
+        ShoppingCart.AdjustItemQuantity(
+          in.itemId,
+          in.quantity,
+          in.randomPayload.toByteArray,
+          replyTo)
 
     val reply: Future[ShoppingCart.Summary] =
       entityRef.askWithStatus(command(_))
@@ -54,12 +62,12 @@ class ShoppingCartServiceImpl(
     convertError(response)
   }
 
-
   override def checkout(in: proto.CheckoutRequest): Future[proto.Cart] = {
     logger.info("checkout {}", in.cartId)
     val entityRef = sharding.entityRefFor(ShoppingCart.EntityKey, in.cartId)
     val reply: Future[ShoppingCart.Summary] =
-      entityRef.askWithStatus(ShoppingCart.Checkout(_))
+      entityRef.askWithStatus(
+        ShoppingCart.Checkout(in.randomPayload.toByteArray, _))
     val response = reply.map(cart => toProtoCart(cart))
     convertError(response)
   }
@@ -78,8 +86,6 @@ class ShoppingCartServiceImpl(
     convertError(response)
   }
 
-
-
   private def toProtoCart(cart: ShoppingCart.Summary): proto.Cart = {
     proto.Cart(
       cart.items.iterator.map { case (itemId, quantity) =>
@@ -87,7 +93,6 @@ class ShoppingCartServiceImpl(
       }.toSeq,
       cart.checkedOut)
   }
-
 
   private def convertError[T](response: Future[T]): Future[T] = {
     response.recoverWith {
@@ -102,7 +107,6 @@ class ShoppingCartServiceImpl(
     }
   }
 
-
   override def getItemPopularity(in: proto.GetItemPopularityRequest)
       : Future[proto.GetItemPopularityResponse] = {
     itemPopularityRepository.getItem(in.itemId).map {
@@ -113,4 +117,3 @@ class ShoppingCartServiceImpl(
     }
   }
 }
-

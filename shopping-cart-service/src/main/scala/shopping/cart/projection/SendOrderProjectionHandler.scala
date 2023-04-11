@@ -8,9 +8,9 @@ import akka.projection.scaladsl.Handler
 import akka.util.Timeout
 import org.slf4j.LoggerFactory
 import shopping.cart.ShoppingCart
-import shopping.order.proto.{Item, OrderRequest, ShoppingOrderService}
+import shopping.order.proto.{ Item, OrderRequest, ShoppingOrderService }
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 
 class SendOrderProjectionHandler(
     system: ActorSystem[_],
