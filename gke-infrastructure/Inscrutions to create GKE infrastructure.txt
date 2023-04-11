@@ -64,22 +64,8 @@ cat ~/.docker/config.json
 
 
 
-Create and publish 'shopping-cart-service' image to GCP artifact repository:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-cd ~/Work/akka-cqrs-cart-example-load-test/shopping-cart-service
-
-sbt clean compile
-
-sbt clean docker:publishLocal
-
-docker tag shopping-cart-load-test/shopping-cart-service:0.2.0-SNAPSHOT \
-northamerica-northeast2-docker.pkg.dev/scylla-cassandra-comparison/load-test/shopping-cart-service:0.2.0-SNAPSHOT
-
-docker push northamerica-northeast2-docker.pkg.dev/scylla-cassandra-comparison/load-test/shopping-cart-service:0.2.0-SNAPSHOT
-
-
 # -------------------------------------------------------------------------------------
-# SETP-2 Kubernetes deployment
+# SETP-2 Create Kubernetes cluster (if it is not already created)
 # -------------------------------------------------------------------------------------
 
 Enable 'Kubernetes Engine API' in your project by visiting 'Enable access to API' section of GCP website for your project.
@@ -90,7 +76,7 @@ If it does not exists, then Create a Kubernetes Cluster:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 OPTION-1
----------
+*********
 Visit https://console.cloud.google.com/kubernetes/list/overview?project=scylla-cassandra-comparison
 
 From 'Create cluster' dialog select <CONFIGURE> for 'Standard: You manage your cluster' option.
@@ -106,8 +92,67 @@ Hit  ... <CREATE> ...
 
 
 OPTION-2:
-----------
-gcloud beta container --project "scylla-cassandra-comparison" clusters create "load-test" --no-enable-basic-auth --cluster-version "1.24.9-gke.3200" --release-channel "regular" --machine-type "e2-medium" --image-type "COS_CONTAINERD" --disk-type "pd-balanced" --disk-size "100" --metadata disable-legacy-endpoints=true --scopes "https://www.googleapis.com/auth/devstorage.read_only","https://www.googleapis.com/auth/logging.write","https://www.googleapis.com/auth/monitoring","https://www.googleapis.com/auth/servicecontrol","https://www.googleapis.com/auth/service.management.readonly","https://www.googleapis.com/auth/trace.append" --num-nodes "3" --logging=SYSTEM,WORKLOAD --monitoring=SYSTEM --enable-ip-alias --network "projects/scylla-cassandra-comparison/global/networks/default" --subnetwork "projects/scylla-cassandra-comparison/regions/northamerica-northeast2/subnetworks/default" --no-enable-intra-node-visibility --default-max-pods-per-node "110" --no-enable-master-authorized-networks --addons HorizontalPodAutoscaling,HttpLoadBalancing,GcePersistentDiskCsiDriver --enable-autoupgrade --enable-autorepair --max-surge-upgrade 1 --max-unavailable-upgrade 0 --enable-shielded-nodes --node-locations "northamerica-northeast2-a"
+*********
+REF: https://cloud.google.com/sdk/gcloud/reference/beta/container/clusters/create
+
+gcloud beta container clusters create "load-test"  \
+        --project "scylla-cassandra-comparison"  \
+        --zone "northamerica-northeast2-a"  \
+        --no-enable-basic-auth  \
+        --cluster-version "1.24.10-gke.2300"  \
+        --release-channel "regular"  \
+        --machine-type "e2-medium"  \
+        --image-type "COS_CONTAINERD"  \
+        --disk-type "pd-balanced"  \
+        --disk-size "100"  \
+        --metadata disable-legacy-endpoints=true  \
+        --scopes "https://www.googleapis.com/auth/devstorage.read_only","https://www.googleapis.com/auth/logging.write","https://www.googleapis.com/auth/monitoring","https://www.googleapis.com/auth/servicecontrol","https://www.googleapis.com/auth/service.management.readonly","https://www.googleapis.com/auth/trace.append"  \
+        --max-pods-per-node "8"  \
+        --num-nodes "3"  \
+        \
+        --enable-autoscaling \
+        --max-nodes "6"  \
+        --min-nodes "0"  \
+        \
+        --logging=SYSTEM,WORKLOAD  \
+        --monitoring=SYSTEM  \
+        --enable-ip-alias  \
+        --network "projects/scylla-cassandra-comparison/global/networks/default"  \
+        --subnetwork "projects/scylla-cassandra-comparison/regions/northamerica-northeast2/subnetworks/default" \
+        --no-enable-intra-node-visibility  \
+        --default-max-pods-per-node "8"  \
+        --no-enable-master-authorized-networks  \
+        --addons HorizontalPodAutoscaling,HttpLoadBalancing,GcePersistentDiskCsiDriver,GcpFilestoreCsiDriver  \
+        --enable-autoupgrade  \
+        --enable-autorepair  \
+        --max-surge-upgrade 1  \
+        --max-unavailable-upgrade 0  \
+        --enable-shielded-nodes  \
+        --node-locations "northamerica-northeast2-a"
+
+NOTE:
+machine-type        # By default 'e2-medium'
+disk-type           # Must be one of: pd-standard, pd-ssd, pd-balanced. Default "pd-balanced"
+disk-size           # Size for node VM boot disks in GB. Default 100 GB
+max-pods-per-node   # The max number of pods per node for this node pool. Must be between 8 and 256. Default 110 (IMHO it is too much for our use case)
+num-nodes           # The number of nodes to be created in each of the cluster's zones. Default 3.
+max-nodes           # Maximum number of nodes per zone in the node pool.
+min-nodes           # Minimum number of nodes per zone in the node pool.
+
+
+
+When successful, the above command will respond back with the result (similar to the following):
+
+kubeconfig entry generated for load-test.
+NAME: load-test
+LOCATION: northamerica-northeast2-a
+MASTER_VERSION: 1.24.10-gke.2300
+MASTER_IP: 34.130.146.184
+MACHINE_TYPE: e2-medium
+NODE_VERSION: 1.24.10-gke.2300
+NUM_NODES: 3
+STATUS: RUNNING
+
 
 
 Once created, you can access this cluster by visiting:
@@ -136,7 +181,6 @@ gcloud container clusters get-credentials load-test \
     --zone=northamerica-northeast2-a
 
 
-
 kubectl config view
 kubectl cluster-info
 
@@ -144,10 +188,29 @@ kubectl config current-context
 # should return something like: gke_scylla-cassandra-comparison_northamerica-northeast2-a_load-test
 
 
+
+# -------------------------------------------------------------------------------------
+# SETP-3 Deploy 'shopping-cart-service' application.
+# -------------------------------------------------------------------------------------
+
+Create and publish 'shopping-cart-service' image to GCP artifact repository:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+cd ~/Work/akka-cqrs-cart-example-load-test/shopping-cart-service
+
+sbt clean compile
+
+sbt clean docker:publishLocal
+
+docker tag shopping-cart-load-test/shopping-cart-service:0.3.0-SNAPSHOT \
+northamerica-northeast2-docker.pkg.dev/scylla-cassandra-comparison/load-test/shopping-cart-service:0.3.0-SNAPSHOT
+
+docker push northamerica-northeast2-docker.pkg.dev/scylla-cassandra-comparison/load-test/shopping-cart-service:0.3.0-SNAPSHOT
+
+
+
 Deploy shopping-cart-service:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 kubectl apply -f deployment/resources.yaml
-
 kubectl get services
 
 
@@ -157,11 +220,6 @@ REF: https://cloud.google.com/artifact-registry/docs/integrate-gke#gcloud
 TEMPLATE: kubectl run [NAME] --image=LOCATION-docker.pkg.dev/PROJECT-ID/REPOSITORY/IMAGE:TAG
 
 kubectl run shopping-cart-service --image=northamerica-northeast2-docker.pkg.dev/scylla-cassandra-comparison/load-test/shopping-cart-service:0.2.0-SNAPSHOT
-
-
-
-
-
 
 
 
@@ -200,14 +258,14 @@ kubectl apply -f deployment/service.yaml
 
 Send GRPc requests for basic testing:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# NOTE: 34.130.209.79 is the IP address of the external load-balancer service.
-grpcurl -d '{"cartId":"cart1", "itemId":"socks", "quantity":3}' -plaintext 34.130.209.79:8101 shoppingcart.ShoppingCartService.AddItem
+# NOTE: 34.130.154.233 is the IP address of the external load-balancer service.
+grpcurl -d '{"cartId":"cart1", "itemId":"socks", "quantity":3}' -plaintext 34.130.154.233:8101 shoppingcart.ShoppingCartService.AddItem
 
 
 
 
 # -------------------------------------------------------------------------------------
-# SETP-3 load-test application deployment
+# SETP-4 load-test application deployment
 # -------------------------------------------------------------------------------------
 
 Create and publish 'shopping-cart-load-test-driver' image to GCP artifact repository:
@@ -218,10 +276,10 @@ sbt clean compile
 
 sbt clean docker:publishLocal
 
-docker tag shopping-cart-load-test/shopping-cart-load-test-driver:0.2.0-SNAPSHOT \
-northamerica-northeast2-docker.pkg.dev/scylla-cassandra-comparison/load-test/shopping-cart-load-test-driver:0.2.0-SNAPSHOT
+docker tag shopping-cart-load-test/shopping-cart-load-test-driver:0.3.0-SNAPSHOT \
+northamerica-northeast2-docker.pkg.dev/scylla-cassandra-comparison/load-test/shopping-cart-load-test-driver:0.3.0-SNAPSHOT
 
-docker push northamerica-northeast2-docker.pkg.dev/scylla-cassandra-comparison/load-test/shopping-cart-load-test-driver:0.2.0-SNAPSHOT
+docker push northamerica-northeast2-docker.pkg.dev/scylla-cassandra-comparison/load-test/shopping-cart-load-test-driver:0.3.0-SNAPSHOT
 
 
 Enable the Filestore CSI driver on an existing cluster:
@@ -291,12 +349,12 @@ kubectl get services
 
 kubectl get pods
 
-kubectl logs -f shopping-cart-load-driver-96487
+kubectl logs -f shopping-cart-load-driver-8g87p
 
 
 
 # --------------------------------------------------------------------------------------
-# SETP-4 Deploy Ubuntu POD to access PVC (after load-test application run to completion)
+# SETP-5 Deploy Ubuntu POD to access PVC (after load-test application run to completion)
 # --------------------------------------------------------------------------------------
 docker pull ubuntu:20.04
 
@@ -316,7 +374,7 @@ kubectl delete pod results
 
 
 # -------------------------------------------------------------------------------------
-# SETP-5 Miscellaneous commands
+# SETP-6 Miscellaneous commands
 # -------------------------------------------------------------------------------------
 
 

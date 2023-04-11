@@ -23,6 +23,12 @@ STEP-1: Launch the ScyllaDB instances (each instance will be a separate one node
 
 gcloud compute instances create scylla-1 --image scylladb-enterprise-2022-2-3 --image-project scylla-images --local-ssd interface=nvme --local-ssd interface=nvme --local-ssd interface=nvme --local-ssd interface=nvme --machine-type=n2-highmem-4 --zone=northamerica-northeast2-a
 
+gcloud compute instances create scylla-2 --image scylladb-enterprise-2022-2-3 --image-project scylla-images --local-ssd interface=nvme --local-ssd interface=nvme --local-ssd interface=nvme --local-ssd interface=nvme --machine-type=n2-highmem-4 --zone=northamerica-northeast2-a
+
+gcloud compute instances create scylla-3 --image scylladb-enterprise-2022-2-3 --image-project scylla-images --local-ssd interface=nvme --local-ssd interface=nvme --local-ssd interface=nvme --local-ssd interface=nvme --machine-type=n2-highmem-4 --zone=northamerica-northeast2-a
+
+
+
 NOTE:
 There is no option to specify the local-ssd size. It is fixed to 375GB. If you need more local ssd then repeat '--local-ssd interface=nvme' to achieve a desired size of total attached local ssd capacity.
 
@@ -95,7 +101,9 @@ sudo nano /etc/scylla/scylla.yaml
 make:
      cluster_name: scylla
      endpoint_snitch: GossipingPropertyFileSnitch
-     auto_bootstrap: true  (for the first/seed node)
+     auto_bootstrap: true       # for the first/seed node, false for others
+     seed_provider:
+       - seeds: 10.188.0.62     # add private IP address of the first/seed node
 
 leave as-is:
             rpc_address: 0.0.0.0
