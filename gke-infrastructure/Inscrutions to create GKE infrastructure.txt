@@ -101,13 +101,13 @@ gcloud beta container clusters create "load-test"  \
         --no-enable-basic-auth  \
         --cluster-version "1.24.10-gke.2300"  \
         --release-channel "regular"  \
-        --machine-type "e2-medium"  \
+        --machine-type "e2-highcpu-16"  \
         --image-type "COS_CONTAINERD"  \
         --disk-type "pd-balanced"  \
         --disk-size "100"  \
         --metadata disable-legacy-endpoints=true  \
         --scopes "https://www.googleapis.com/auth/devstorage.read_only","https://www.googleapis.com/auth/logging.write","https://www.googleapis.com/auth/monitoring","https://www.googleapis.com/auth/servicecontrol","https://www.googleapis.com/auth/service.management.readonly","https://www.googleapis.com/auth/trace.append"  \
-        --max-pods-per-node "8"  \
+        --max-pods-per-node "20"  \
         --num-nodes "3"  \
         \
         --enable-autoscaling \
@@ -120,7 +120,7 @@ gcloud beta container clusters create "load-test"  \
         --network "projects/scylla-cassandra-comparison/global/networks/default"  \
         --subnetwork "projects/scylla-cassandra-comparison/regions/northamerica-northeast2/subnetworks/default" \
         --no-enable-intra-node-visibility  \
-        --default-max-pods-per-node "8"  \
+        --default-max-pods-per-node "20"  \
         --no-enable-master-authorized-networks  \
         --addons HorizontalPodAutoscaling,HttpLoadBalancing,GcePersistentDiskCsiDriver,GcpFilestoreCsiDriver  \
         --enable-autoupgrade  \
@@ -141,7 +141,7 @@ min-nodes           # Minimum number of nodes per zone in the node pool.
 
 
 
-When successful, the above command will respond back with the result (similar to the following):
+When successful, the above command will respond back with the result similar to the following:
 
 kubeconfig entry generated for load-test.
 NAME: load-test
@@ -336,10 +336,13 @@ Deploy shopping-cart-load-driver job:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 cd ~/Work/akka-cqrs-cart-example-load-test/load-testing
 
-# TODO: The following does not work as a single YAML because JOB resource preempts the PVC
+
+# NOTE: The following takes takes several minutes to complete, as PVC claim takes time to bind
+#       The PVC status can be observed in 'Storage' section of the 'loat-test ' cluster in the GCP console UI.
 kubectl apply -f deployment/resources.yaml
 
-# TODO:  We have to first deploy the storage-class and PVC, and then deploy JOB
+
+# TODO: ALTERNATE: We have to first deploy the storage-class and PVC, and then deploy JOB
 kubectl apply -f deployment/load-test-storage.yaml
 kubectl apply -f deployment/load-test-job.yaml
 
