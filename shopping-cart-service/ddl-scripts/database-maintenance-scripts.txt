@@ -14,6 +14,7 @@ select count(*) from cart_service.all_persistence_ids;
 select count(*) from cart_service.tag_write_progress;
 
 
+-- TRUNCATE tables
 truncate table cart_service.tag_views;
 truncate table cart_service.tag_scanning;
 truncate table cart_service.projection_management;
@@ -28,6 +29,7 @@ truncate table cart_service.all_persistence_ids;
 truncate table cart_service.tag_write_progress;
 
 
+-- DROP tables
 drop table cart_service.tag_views;
 drop table cart_service.tag_scanning;
 drop table cart_service.projection_management;
