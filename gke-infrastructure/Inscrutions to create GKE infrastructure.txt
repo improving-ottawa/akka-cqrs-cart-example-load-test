@@ -75,8 +75,7 @@ Enable 'Kubernetes Engine API' in your project by visiting 'Enable access to API
 If it does not exists, then Create a Kubernetes Cluster:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-OPTION-1
-*********
+********* OPTION-1: To create a basic/minimalistic cluster
 Visit https://console.cloud.google.com/kubernetes/list/overview?project=scylla-cassandra-comparison
 
 From 'Create cluster' dialog select <CONFIGURE> for 'Standard: You manage your cluster' option.
@@ -91,8 +90,8 @@ CONTROL PLANE VERSION: Release channel (AND accept defaults for 'Release channel
 Hit  ... <CREATE> ...
 
 
-OPTION-2:
-*********
+
+********* OPTION-2: To create a cluster specific to your requirements
 REF: https://cloud.google.com/sdk/gcloud/reference/beta/container/clusters/create
 
 gcloud beta container clusters create "load-test"  \
@@ -101,17 +100,17 @@ gcloud beta container clusters create "load-test"  \
         --no-enable-basic-auth  \
         --cluster-version "1.24.10-gke.2300"  \
         --release-channel "regular"  \
-        --machine-type "e2-highcpu-16"  \
+        --machine-type "e2-highcpu-32"  \
         --image-type "COS_CONTAINERD"  \
         --disk-type "pd-balanced"  \
         --disk-size "100"  \
         --metadata disable-legacy-endpoints=true  \
         --scopes "https://www.googleapis.com/auth/devstorage.read_only","https://www.googleapis.com/auth/logging.write","https://www.googleapis.com/auth/monitoring","https://www.googleapis.com/auth/servicecontrol","https://www.googleapis.com/auth/service.management.readonly","https://www.googleapis.com/auth/trace.append"  \
         --max-pods-per-node "20"  \
-        --num-nodes "3"  \
+        --num-nodes "4"  \
         \
         --enable-autoscaling \
-        --max-nodes "6"  \
+        --max-nodes "5"  \
         --min-nodes "0"  \
         \
         --logging=SYSTEM,WORKLOAD  \
@@ -342,17 +341,13 @@ cd ~/Work/akka-cqrs-cart-example-load-test/load-testing
 kubectl apply -f deployment/resources.yaml
 
 
-# TODO: ALTERNATE: We have to first deploy the storage-class and PVC, and then deploy JOB
-kubectl apply -f deployment/load-test-storage.yaml
-kubectl apply -f deployment/load-test-job.yaml
-
 
 
 kubectl get services
 
 kubectl get pods
 
-kubectl logs -f shopping-cart-load-driver-8g87p
+kubectl logs -f shopping-cart-load-driver-????
 
 
 
