@@ -14,7 +14,7 @@ spec:
             claimName: shopping-cart-load-driver-pvc
       containers:
         - name: shopping-cart-load-driver
-          image: northamerica-northeast2-docker.pkg.dev/scylla-cassandra-comparison/load-test/shopping-cart-load-test-driver:0.3.0-SNAPSHOT
+          image: northamerica-northeast2-docker.pkg.dev/scylla-cassandra-comparison/load-test/shopping-cart-load-test-driver:0.3.0-SNAPSHOT # note
           imagePullPolicy: Always
           volumeMounts:
             - mountPath: "/mnt/simulation-data"
@@ -27,15 +27,15 @@ spec:
             - name: TARGET_PORT
               value: "8101"
             - name: TEST_DURATION
-              value: "60.seconds"
+              value: "180.minutes"  # 10800.seconds
             - name: USERS_PER_SECOND
-              value: "2"
+              value: "100"
             - name: RAMP_FROM
               value: "1"
             - name: RAMP_TO
-              value: "2"
+              value: "100"
             - name: RAMP_OVER
-              value: "10.minutes"
+              value: "5.minutes"
             - name: GATLING_GRPC_LOG_LEVEL
               value: "DEBUG"  # will log failed responses
             - name: RESULT_BASE_DIR
@@ -44,6 +44,12 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+          resources:
+            requests:
+              cpu: "30000m"
+              memory: "24Gi"
+            limits:
+              memory: "24Gi"
       restartPolicy: Never
   backoffLimit: 4
   completions: 1
