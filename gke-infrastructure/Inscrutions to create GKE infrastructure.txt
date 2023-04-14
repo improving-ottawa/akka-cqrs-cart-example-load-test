@@ -351,9 +351,12 @@ kubectl logs -f shopping-cart-load-driver-????
 
 
 
-# --------------------------------------------------------------------------------------
-# SETP-5 Deploy Ubuntu POD to access PVC (after load-test application run to completion)
-# --------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------------------------
+# SETP-5 Deploy Ubuntu POD to access PVC, after load-test application run to completion, to get fetch simulation.log
+# ------------------------------------------------------------------------------------------------------------------
+
+# Push Ubuntu image to GKE registry
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 docker pull ubuntu:20.04
 
 docker tag ubuntu:20.04 \
@@ -361,11 +364,28 @@ docker tag ubuntu:20.04 \
 
 docker push northamerica-northeast2-docker.pkg.dev/scylla-cassandra-comparison/load-test/ubuntu:20.04
 
+
+# Deploy the 'results-pod' and view simulation.log
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 kubectl apply -f deployment/results-pod.yaml
-
 kubectl get pods
-kubectl exec --stdin --tty results -- /bin/bash
 
+kubectl exec --stdin --tty results -- /bin/bash   # Terminal access to the POD
+
+ls -al /mnt/simulation-data/results-shopping-cart-load-driver-?????/shoppingcartserviceloadtest-????????/simulation.log
+
+
+# Export 'simulation.log' from the 'results' POD to the local machine
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In a terminal window on the laptop
+
+cd ~/load-test-results/
+kubectl cp default/results:/mnt/simulation-data/results-shopping-cart-load-driver-78xs7/shoppingcartserviceloadtest-20230413213637940/ .
+ls -al simulation.log
+
+
+# Delete the 'results' POD once done
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 kubectl delete pod results
 
 
@@ -398,12 +418,3 @@ To get to know the different options that kubernetes has to create a persintent 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 kubectl get storageclass
 kubectl describe storageclass
-
-
-To get terminal access to the running load-test POD:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-kubectl get pods
-
-kubectl exec --stdin --tty shopping-cart-load-driver-w8b6m -- /bin/bash
-
-kubectl cp shopping-cart-load-driver-w8b6m:/mnt/simulation-data/results-shopping-cart-load-driver-w8b6m/shoppingcartserviceloadtest-20230328001857874/simulation.log ~/Work/Scylla_Cassandra
