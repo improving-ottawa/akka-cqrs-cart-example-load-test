@@ -3,6 +3,19 @@
 -- STEP-0: General information & Preparations
 -------------------------------------------------------------------------------------
 
+Authenticate your gcloud SDK from your local machine:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+REF: https://cloud.google.com/artifact-registry/docs/docker/authentication
+
+gcloud auth login
+
+
+Set the right project:
+~~~~~~~~~~~~~~~~~~~~~~~
+gcloud projects list |grep scylla
+gcloud config set project scylla-cassandra-comparison
+
+
 DSE Configuration:
 ~~~~~~~~~~~~~~~~~~~~
 General configuration: https://docs.datastax.com/en/dse/6.8/dse-dev/datastax_enterprise/config/configTOC.html
@@ -363,7 +376,7 @@ Seed Node:   Select 'Make this a seed node' option for the first node in the clu
 To initiate the actual installation:
 
 SELECT 'Install' from  '...' menu (next to dse-1 in Nodes list 'Lifecycle Manager:Cluster' deployment UI).
-  THEN select 'True' for 'Auto bootstrap', and 'Lifecycle Manager Default' for others.
+  THEN select 'True' for 'Auto bootstrap' for seed node, and 'Lifecycle Manager Default' for others.
 
 
 

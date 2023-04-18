@@ -257,11 +257,16 @@ cp prometheus/scylla_servers.example.yml prometheus/scylla_servers.yml
                      dc: yoppworks
 
 
+# OPTIONAL: To stop/remove the existing monitoring stack
+./kill-all.sh
+cd ~/scylla-monitoring-scylla-monitoring-4.3.0
+rm -r prometheus_data/
 
 # Start the Scylla Monitoring Stack:
+cd ~/scylla-monitoring-scylla-monitoring-4.3.0
 ./start-all.sh -s prometheus/scylla_servers.yml -d prometheus_data
 
-If required use './kill-all.sh' to stop/remove the monitoring stack.
+
 
 
 
