@@ -23,7 +23,6 @@ gcloud config set project scylla-cassandra-comparison
 # STEP 1: Load image in the container registry
 # -------------------------------------------------------------------------------------
 
-
 To create an Artifactory repository:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 gcloud artifacts repositories create load-test --repository-format=docker \
@@ -351,9 +350,9 @@ kubectl logs -f shopping-cart-load-driver-????
 
 
 
-# ------------------------------------------------------------------------------------------------------------------
-# SETP-5 Deploy Ubuntu POD to access PVC, after load-test application run to completion, to get fetch simulation.log
-# ------------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------
+# SETP-5 Deploy Ubuntu POD to fetch simulation.log from PVC after load-test application run to completion
+# ---------------------------------------------------------------------------------------------------------
 
 # Push Ubuntu image to GKE registry
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -363,6 +362,7 @@ docker tag ubuntu:20.04 \
   northamerica-northeast2-docker.pkg.dev/scylla-cassandra-comparison/load-test/ubuntu:20.04
 
 docker push northamerica-northeast2-docker.pkg.dev/scylla-cassandra-comparison/load-test/ubuntu:20.04
+
 
 
 # Deploy the 'results-pod' and view simulation.log
@@ -377,9 +377,9 @@ ls -al /mnt/simulation-data/results-shopping-cart-load-driver-?????/shoppingcart
 
 # Export 'simulation.log' from the 'results' POD to the local machine
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-In a terminal window on the laptop
+# In a terminal window on your local machine
+cd ~/scylla-vs-cassandra/load-test-results/scylla/simulation-data/    # Assuming this folder already exists
 
-cd ~/load-test-results/
 kubectl cp default/results:/mnt/simulation-data/results-shopping-cart-load-driver-78xs7/shoppingcartserviceloadtest-20230413213637940/ .
 ls -al simulation.log
 
@@ -390,9 +390,22 @@ kubectl delete pod results
 
 
 
+# -----------------------------------------------------------------------------------------------------------------
+# SETP-6 OPTIONAL, Download 'prometheus data' from Scylla Monitoring stack VM in GCP, after the load-test complete
+# -----------------------------------------------------------------------------------------------------------------
+# REF: https://cloud.google.com/sdk/gcloud/reference/compute/scp
+# In a terminal window on your local machine
+
+gcloud compute scp --recurse scylla-monitoring-2:/home/{user_name}/scylla-monitoring-scylla-monitoring-4.3.0/prometheus_data ~/scylla-vs-cassandra/load-test-results/scylla
+
+# NOTE: Above command assumes that '~/scylla-vs-cassandra/load-test-results/scylla' already exists on your local machine
+
+ls -al ~/scylla-vs-cassandra/load-test-results/scylla/prometheus_data/
+
+
 
 # -------------------------------------------------------------------------------------
-# SETP-6 Miscellaneous commands
+# SETP-7 Miscellaneous commands
 # -------------------------------------------------------------------------------------
 
 
@@ -414,7 +427,8 @@ kubectl get pvc shopping-cart-load-driver-pvc -o jsonpath='{.metadata.namespace}
 # Or see the entire yaml
 kubectl get pvc shopping-cart-load-driver-pvc -o yaml
 
-To get to know the different options that kubernetes has to create a persintent volume:
+
+To get to know the different options that kubernetes has to create a persistent volume:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 kubectl get storageclass
 kubectl describe storageclass
