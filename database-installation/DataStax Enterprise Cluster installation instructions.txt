@@ -386,3 +386,34 @@ cat /etc/dse/cassandra/cassandra.yaml |grep director
 
 To find out deployed Linux OS and Version for DSE nodes
 $> cat /etc/os-release
+
+
+
+-- --------------------------------------------------------------------------------
+-- STEP-4: Clearing the data from DataStax Enterprise
+-- --------------------------------------------------------------------------------
+
+Drain and stop all nodes, starting with the seed node
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+nodetool drain
+sudo service dse stop
+sudo service dse status
+
+Remove all data
+~~~~~~~~~~~~~~~~
+sudo su
+cd /mnt/disks/cassandra_data/
+
+sudo rm -rf data/* commitlog/* saved_caches/* hints/*
+exit
+
+# sudo rm -rf data/* ## Remove only the data directories
+
+
+Restarting the DataStax Enterprise node
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+sudo service dse start      # sudo service dse restart   ## to restart a dse service
+sudo service dse status
+
+# after a minute or so, when all dse processes have started
+nodetool status
