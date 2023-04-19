@@ -115,7 +115,10 @@ leave as-is:
 
 Among other settings as directed in the REF: link above.
 
+
+
 NOTE: Recommendations from ScyllaDB support team for deploying all ScyllaDB nodes in a single zone
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Manually set endpoint_snitch: GossipingPropertyFileSnitch and force artificial racks using cassandra-rackdc.properties file for each node. In the end, you should still have number of racks matching the replication factor
 
 
