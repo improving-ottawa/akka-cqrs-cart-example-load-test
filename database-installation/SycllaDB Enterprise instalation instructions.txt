@@ -19,6 +19,10 @@ gcloud config set project scylla-cassandra-comparison
 -----------------------------------------------------------------------------------------------
 STEP-1: Launch the ScyllaDB instances (each instance will be a separate one node cluster)
 -----------------------------------------------------------------------------------------------
+REF:
+https://www.scylladb.com/download/?platform=gcp#open-source
+https://cloud.google.com/sdk/gcloud/reference/compute/instances/create
+https://cloud.google.com/compute/all-pricing
 
 
 gcloud compute instances create scylla-1 --image scylladb-enterprise-2022-2-3 --image-project scylla-images --local-ssd interface=nvme --local-ssd interface=nvme --local-ssd interface=nvme --local-ssd interface=nvme --machine-type=n2-highmem-4 --zone=northamerica-northeast2-a
