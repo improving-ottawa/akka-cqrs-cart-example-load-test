@@ -390,8 +390,32 @@ $> cat /etc/os-release
 
 
 -- --------------------------------------------------------------------------------
--- STEP-4: Clearing the data from DataStax Enterprise
+-- STEP-4: Clearing 'cart_service' data from DataStax Enterprise
 -- --------------------------------------------------------------------------------
+# Perform the following on every DSE cluster node when no client is connected to the database
+nodetool flush
+nodetool cleanup
+
+# Peform on one DSE cluster node when no client is connected to the database
+cqlsh dse-1 -e "drop keyspace cart_service;"
+
+# Perform the following on every DSE cluster node when no client is connected to the database
+nodetool cleanup
+
+sudo ls -al /mnt/disks/cassandra_data/data
+sudo rm -r /mnt/disks/cassandra_data/data/cart_service
+sudo ls -al /mnt/disks/cassandra_data/data
+
+sudo ls -al /mnt/disks/cassandra_data/commitlog
+sudo find /mnt/disks/cassandra_data/commitlog/ -name "CommitLog*" -delete
+sudo ls -al /mnt/disks/cassandra_data/commitlog
+
+
+-- --------------------------------------------------------------------------------
+-- STEP-4(Alternative): Clearing ALL the data from DataStax Enterprise
+-- NOTE: This will also remove the DSE OpsCenter monitoring dashboard data as well
+-- --------------------------------------------------------------------------------
+
 
 Drain and stop all nodes, starting with the seed node
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -417,3 +441,41 @@ sudo service dse status
 
 # after a minute or so, when all dse processes have started
 nodetool status
+
+
+
+-- --------------------------------------------------------------------------------
+-- STEP-6: Retrieve copy of DSE 'Ops Center' Dashboard data, from 'dse-1' node,
+--         So that we can re-review the dashboard at a later time if required
+--         by re-installing the DSE OpsCenter and re-building one-node dse Cluster
+--         where contents of /mnt/disks/cassandra_data folder in 'dse-1' node are
+--         obtained by uncompressing 'mnt_disks_cassandra_data.tar.gz' file.
+-- --------------------------------------------------------------------------------
+
+NOTE: Make sure you remove 'cart_service' keyspace and its associated data from
+      '/mnt/disk/cassandra_data' folder (as specified in Step-4 above)
+      BEFORE
+      following this step to retrieve copy of DSE 'Ops Center' Dashboard data
+
+# 'drain' and 'stop' dse-2 and dse-3 nodes from DataStax OpsCenter dashboard, one after another
+
+# 'drain' and 'stop' dse-1 node as the last node (assume 'dse-1' is the seed node)
+
+
+# ssh into 'dse-1' node
+# NOTE: following assume 34.130.248.131 is IP address of 'dse-1' node
+~/.ssh/gcloud-ssh-dse-vms syed.junaid@34.130.248.131
+
+
+# Compress '/mnt/disks/cassandra_data' into a file
+sudo tar -zcvf mnt_disks_cassandra_data.tar.gz -C /mnt/disks/cassandra_data .
+
+exit
+
+
+# Copy 'mnt_disks_cassandra_data.tar.gz' file to your local machine
+cd /Users/syed/Work/scylla-vs-cassandra/load-test-results/datastax/DataStax_DSE-1_node_data
+
+gcloud compute scp syed.junaid@dse-1:/home/syed.junaid/mnt_disks_cassandra_data.tar.gz . --ssh-key-file ~/.ssh/gcloud-ssh-dse-vms
+
+NOTE: When done, compare the sized of the 'mnt_disks_cassandra_data.tar.gz' file both on you local machine and 'dse-1' node.
