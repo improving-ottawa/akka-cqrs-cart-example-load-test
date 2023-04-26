@@ -390,9 +390,30 @@ kubectl delete pod results
 
 
 
-# -----------------------------------------------------------------------------------------------------------------
-# SETP-6 OPTIONAL, Download 'prometheus data' from Scylla Monitoring stack VM in GCP, after the load-test complete
-# -----------------------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------
+# SETP-6 Generate Gatling report from the 'simulation.log'
+# ------------------------------------------------------------
+# REF: https://gatling.io/docs/gatling/guides/scaling_out/#scaling-out-with-gatling-open-source
+
+Assuming that 'simulation-data' is directory that holds the 'simulation.log' from 'shopping-cart-load-driver' application. The the command to generate Gatling report will look somthing like the following:
+
+        /path/to/bin/gatling.sh -ro /path/to/simulation-data
+
+For example,
+
+/Users/syed/Work/gatling/bin/gatling.sh -ro ~/Work/scylla-vs-cassandra/load-test-results/scylla/simulation-data
+
+This will generate the Gatling report HTML in 'simulation-data' directory.
+
+Point your browser to index.html from 'simulation-data' to review the Gatling generated report.
+
+
+
+# -----------------------------------------------------------------------------------------------------------
+# SETP-7 Download 'prometheus data' from Scylla Monitoring stack VM in GCP, after the load-test complete
+#        We may want to do this to preserve Monitoring Graphs data to load into the Scylla Monitoring Stack
+#        for reporting based on these graphs at a later date.
+# -----------------------------------------------------------------------------------------------------------
 # REF: https://cloud.google.com/sdk/gcloud/reference/compute/scp
 # In a terminal window on your local machine
 
@@ -405,7 +426,7 @@ ls -al ~/scylla-vs-cassandra/load-test-results/scylla/prometheus_data/
 
 
 # -------------------------------------------------------------------------------------
-# SETP-7 Miscellaneous commands
+# SETP-8 Miscellaneous commands
 # -------------------------------------------------------------------------------------
 
 
