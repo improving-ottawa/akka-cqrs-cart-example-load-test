@@ -31,8 +31,11 @@ class ShoppingCartScenario(catalogue: Catalogue, randomPayloadBytes: Int)(protoc
 
   private val randomSubsetOfItems = catalogue.randomPortionOfItemsUnique().sample.get
 
-  private val scenarioInputGen: Gen[Map[String, Any]] =
-    Map("numberOfUpdates" -> numberOfUpdateGen.sample.get)
+  private val scenarioInputGen: Gen[Map[String, Any]] = Gen.nonEmptyMap {
+    for {
+      updates <- numberOfUpdateGen
+    } yield ("numberOfUpdates" -> updates)
+  }
 
   private val fillCartFeeder: Feeder[Any] = Iterator.continually(scenarioInputGen.sample.get)
 

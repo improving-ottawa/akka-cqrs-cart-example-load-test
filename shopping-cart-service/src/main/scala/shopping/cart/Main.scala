@@ -38,11 +38,13 @@ object Main {
   }
 
   def init(system: ActorSystem[_], orderService: ShoppingOrderService): Unit = {
-
+    Cinnamon
     AkkaManagement(system).start()
     ClusterBootstrap(system).start()
 
     ShoppingCart.init(system)
+
+    val config = system.settings.config
 
 //    // JDBC
 //    // construct some jdbc primitives
@@ -72,15 +74,18 @@ object Main {
     val popularityRepo = new CassandraItemPopularityRepository(
       cassandraSession)(system)
 
-    // project event journal to cassandra projection
-    val projectionFactory: ItemPopularityProjection.ProjectionFactory =
-      CassandraItemPopularityProjectionHandler.cassandraProjectionFactory(
-        popularityRepo)
+    val runProjection = config.getBoolean("shopping-cart-service.run-item-popularity-projection")
+    if (runProjection) {
+      // project event journal to cassandra projection
+      val projectionFactory: ItemPopularityProjection.ProjectionFactory =
+        CassandraItemPopularityProjectionHandler.cassandraProjectionFactory(
+          popularityRepo)
 
-    ItemPopularityProjection.init(
-      system,
-      readJournalSourceFactory,
-      projectionFactory)
+      ItemPopularityProjection.init(
+        system,
+        readJournalSourceFactory,
+        projectionFactory)
+    }
 
     // disable kafka domain event projection: goal is to minimize moving parts involved in a load test
     //PublishEventsProjection.init(system)

@@ -64,7 +64,7 @@ metadata:
 spec:
   containers:
     - name: grafana
-      image: grafana/grafana:9.2.15.cinnamon.trial
+      image: grafana/grafana:9.2.15.cinnamon.trial.2
       imagePullPolicy: IfNotPresent
       resources:
         requests:

@@ -9,47 +9,50 @@ spec:
         runAsUser: 0
         runAsGroup: 0
       volumes:
-        - name: shopping-cart-load-driver-pvc
+        - name: shopping-cart-load-driver-storage
           persistentVolumeClaim:
             claimName: shopping-cart-load-driver-pvc
       containers:
         - name: shopping-cart-load-driver
-          image: northamerica-northeast2-docker.pkg.dev/scylla-cassandra-comparison/load-test/shopping-cart-load-test-driver:0.3.0-SNAPSHOT # note
-          imagePullPolicy: Always
+          image: shopping-cart-load-test/shopping-cart-load-test-driver:0.4.0-SNAPSHOT
+          imagePullPolicy: IfNotPresent
           volumeMounts:
             - mountPath: "/mnt/simulation-data"
-              name: shopping-cart-load-driver-pvc
+#              name: shopping-cart-load-driver-pvc
+              name: shopping-cart-load-driver-storage
           env:
             - name: RANDOM_PAYLOAD_SIZE
-              value: "50"  # value in bytes
+              value: "1"  # value in byt
             - name: TARGET_HOST
               value: "shopping-cart-service"  # service hostname exposed by shopping-cart-service
             - name: TARGET_PORT
               value: "8101"
             - name: TEST_DURATION
-              value: "180.minutes"  # 10800.seconds
+              value: "10.minute"  # 10800.seconds
             - name: USERS_PER_SECOND
-              value: "100"
+              value: "4"
             - name: RAMP_FROM
               value: "1"
             - name: RAMP_TO
-              value: "100"
+              value: "2"
             - name: RAMP_OVER
-              value: "5.minutes"
+              value: "10.minute"
             - name: GATLING_GRPC_LOG_LEVEL
-              value: "DEBUG"  # will log failed responses
+              value: "INFO"  # will log failed responses
             - name: RESULT_BASE_DIR
               value: "/mnt/simulation-data" # should pick/set a more appropriate mount path
+            - name: NO_REPORTS
+              value: "false"
             - name: POD_NAME
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
           resources:
             requests:
-              cpu: "30000m"
-              memory: "24Gi"
+              cpu: "250m"
+              memory: "1Gi"
             limits:
-              memory: "24Gi"
+              memory: "1Gi"
       restartPolicy: Never
   backoffLimit: 4
   completions: 1
@@ -61,19 +64,35 @@ metadata:
 spec:
   accessModes:
     - ReadWriteMany
-  storageClassName: shopping-cart-load-driver-pv
+  storageClassName: manual
   resources:
     requests:
-      storage: 1Ti
+      storage: 1Gi
 ---
-# This PV is a common, persistent volume to collect simulation results of load tests across nodes, runs.
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
+apiVersion: v1
+kind: PersistentVolume
 metadata:
   name: shopping-cart-load-driver-pv
-provisioner: filestore.csi.storage.gke.io
-volumeBindingMode: Immediate
-allowVolumeExpansion: true
-parameters:
-  tier: standard
-  network: default
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+    - ReadWriteMany
+  hostPath:
+    # TODO:  maps to a local directory as demonstration, replace accordingly
+    path: "/Users/dkichler/projects/scylla-pov/akka-cqrs-cart-example/load-testing/results"
+# This PV is a common, persistent volume to collect simulation results of load tests across nodes, runs.
+#apiVersion: storage.k8s.io/v1
+#kind: StorageClass
+#metadata:
+#  name: shopping-cart-load-driver-pv
+#provisioner: filestore.csi.storage.gke.io
+#volumeBindingMode: Immediate
+#allowVolumeExpansion: true
+#parameters:
+#  tier: standard
+#  network: default

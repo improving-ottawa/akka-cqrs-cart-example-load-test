@@ -24,7 +24,7 @@ metadata:
   labels:
     app: shopping-cart-service
 spec:
-  replicas: 15
+  replicas: 3
   selector:
     matchLabels:
       app: shopping-cart-service
@@ -40,7 +40,7 @@ spec:
     spec:
       containers:
         - name: shopping-cart-service
-          image: shopping-cart-load-test/shopping-cart-service:0.3.0-SNAPSHOT
+          image: shopping-cart-load-test/shopping-cart-service:0.5.0-SNAPSHOT
           imagePullPolicy: IfNotPresent
           #args: ["-XX:+HeapDumpOnOutOfMemoryError", "-XX:HeapDumpPath=/mnt/heapdumps/$(POD_NAME).hprof"]
           env:
@@ -49,17 +49,19 @@ spec:
                 -Dconfig.resource=deployed.conf
                 -XX:+UseG1GC
                 -XX:+UseStringDeduplication
-                -Xmx4096m
-                -Xms1100m
+                -Xmx1500m
+                -Xms1500m
                 -XX:+PrintFlagsFinal
             # this value should stay the same as number of replicas
             - name: REQUIRED_CONTACT_POINT_NR
               value: "3"
             # currently configured to point at cassandra-1 'example' cluster (found in cassandra.yaml)
             - name: CASSANDRA_SEED_NODE
-              value: "34.130.197.118:9042"
+              value: "cassandra-1.cassandra-single:9042"
             - name: CASSANDRA_LOCAL_DATACENTER
-              value: "yoppworks"
+              value: "datacenter1"
+            - name: RUN_ITEM_POPULARITY_PROJECTION
+              value: "false"
             - name: PASSIVATION_ACTIVE_ENTITY_LIMIT
               value: "2000000"
             - name: CASSANDRA_REPLICAS
