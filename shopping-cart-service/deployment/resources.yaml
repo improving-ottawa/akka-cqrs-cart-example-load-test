@@ -38,11 +38,21 @@ spec:
       labels:
         app: shopping-cart-service
     spec:
+      volumes:
+        - name: shopping-cart-service-storage
+          persistentVolumeClaim:
+            claimName: shopping-cart-service-pvc
       containers:
         - name: shopping-cart-service
           image: shopping-cart-load-test/shopping-cart-service:0.5.0-SNAPSHOT
           imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - mountPath: "/mnt/gc-logs"
+              #              name: shopping-cart-load-driver-pvc
+              name: shopping-cart-service-storage
           #args: ["-XX:+HeapDumpOnOutOfMemoryError", "-XX:HeapDumpPath=/mnt/heapdumps/$(POD_NAME).hprof"]
+          # Variable-substitution only works for args, not env. The start-script will handle the JVM args correctly.
+          args: ["-XX:+HeapDumpOnOutOfMemoryError", "-XX:HeapDumpPath=/mnt/heapdumps/$(POD_NAME).hprof", "-Xloggc:/mnt/gc-logs/$(POD_NAME)-gc.log"]
           env:
             - name: JAVA_OPTS
               value: >-
@@ -52,6 +62,10 @@ spec:
                 -Xmx1500m
                 -Xms1500m
                 -XX:+PrintFlagsFinal
+                -XX:+PrintGCDetails
+                -XX:+PrintTenuringDistribution
+                -XX:+PrintGCTimeStamps
+                -XX:+PrintGCDateStamps
             # this value should stay the same as number of replicas
             - name: REQUIRED_CONTACT_POINT_NR
               value: "3"
@@ -133,3 +147,33 @@ spec:
       app: shopping-cart-service
   endpoints:
     - port: metrics
+---
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: shopping-cart-service-pvc
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: manual
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: shopping-cart-service-pv
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+    - ReadWriteMany
+  hostPath:
+    # TODO:  maps to a local directory as demonstration, replace accordingly
+    path: "/Users/dkichler/projects/scylla-pov/akka-cqrs-cart-example/shopping-cart-service/gc-logs"
