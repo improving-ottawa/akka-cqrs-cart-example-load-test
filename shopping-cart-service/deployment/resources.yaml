@@ -44,7 +44,7 @@ spec:
             claimName: shopping-cart-service-pvc
       containers:
         - name: shopping-cart-service
-          image: shopping-cart-load-test/shopping-cart-service:0.5.0-SNAPSHOT
+          image: shopping-cart-load-test/shopping-cart-service:0.6.0-SNAPSHOT
           imagePullPolicy: IfNotPresent
           volumeMounts:
             - mountPath: "/mnt/gc-logs"
@@ -74,6 +74,10 @@ spec:
               value: "cassandra-1.cassandra-single:9042"
             - name: CASSANDRA_LOCAL_DATACENTER
               value: "datacenter1"
+            - name: JAEGER_HOST
+              value: "single-jaeger-agent"
+            - name: JAEGER_PORT
+              value: "5775"
             - name: RUN_ITEM_POPULARITY_PROJECTION
               value: "false"
             - name: PASSIVATION_ACTIVE_ENTITY_LIMIT

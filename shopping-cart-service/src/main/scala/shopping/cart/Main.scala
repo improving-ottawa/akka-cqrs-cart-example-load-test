@@ -38,7 +38,6 @@ object Main {
   }
 
   def init(system: ActorSystem[_], orderService: ShoppingOrderService): Unit = {
-    Cinnamon
     AkkaManagement(system).start()
     ClusterBootstrap(system).start()
 

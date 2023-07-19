@@ -6,7 +6,7 @@ licenses := Seq(("CC0", url("https://creativecommons.org/publicdomain/zero/1.0")
 
 scalaVersion := "2.13.5"
 
-ThisBuild / version := "0.5.0-SNAPSHOT"
+ThisBuild / version := "0.6.0-SNAPSHOT"
 
 Compile / scalacOptions ++= Seq(
   "-target:11",
@@ -16,6 +16,12 @@ Compile / scalacOptions ++= Seq(
   "-Xlog-reflective-calls",
   "-Xlint")
 Compile / javacOptions ++= Seq("-Xlint:unchecked", "-Xlint:deprecation")
+
+javaOptions ++= Seq(
+  "-XX:+PrintFlagsFinal",
+  //"-Xlog:gc*+age*+task*=debug+safepoint*:file=./gc.log"
+  "-Xlog:gc=debug,age=debug,safepoint=debug:file=gc.log"
+)
 
 Test / parallelExecution := false
 Test / testOptions += Tests.Argument("-oDF")
@@ -83,7 +89,9 @@ libraryDependencies ++= Seq(
   // Use Akka gRPC instrumentation
   Cinnamon.library.cinnamonAkkaGrpc,
   Cinnamon.library.cinnamonPrometheus,
-  Cinnamon.library.cinnamonPrometheusHttpServer
+  Cinnamon.library.cinnamonPrometheusHttpServer,
+  Cinnamon.library.cinnamonOpenTracing,
+  Cinnamon.library.cinnamonOpenTracingJaeger
 )
 
 libraryDependencies ++= Seq(
