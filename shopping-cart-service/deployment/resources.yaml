@@ -62,10 +62,7 @@ spec:
                 -Xmx1500m
                 -Xms1500m
                 -XX:+PrintFlagsFinal
-                -XX:+PrintGCDetails
-                -XX:+PrintTenuringDistribution
-                -XX:+PrintGCTimeStamps
-                -XX:+PrintGCDateStamps
+                -Xlog:gc=debug,age=debug,safepoint=debug:file=/mnt/gc-logs/$(POD_NAME)-gc.log
             # this value should stay the same as number of replicas
             - name: REQUIRED_CONTACT_POINT_NR
               value: "3"
